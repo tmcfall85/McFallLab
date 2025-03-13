@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path, PosixPath
 
 import pandas as pd
+import sys
 
 
 def move_rcc_file_to_scratch(
@@ -67,9 +68,14 @@ def move_rcc_files_to_scratch(
 
 
 if __name__ == "__main__":
+    user = sys.argv[1]
+    acc_file = pd.read_csv(sys.argv[2])
+    out_dir = sys.argv[3]
+    sub_dirs = sys.argv[4:]
+    
     move_rcc_files_to_scratch(
-        ["TL-19-695788", "TL-19-4A2D28"],
-        Path("/group/dseo"),
-        ["work/tempus/seo_tempus_first_seq_data", "work/tempus/seo_tempus_second_seq_data"],
-        Path("/scratch/g/dseo/rna_seq_temp/"),
+        acc_file.accession_id.values,
+        Path(f"/group/{user}"),
+        sub_dirs,
+        Path(f"/scratch/g/{user}/rna_seq_temp/"),
     )
