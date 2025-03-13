@@ -70,6 +70,6 @@ if __name__ == "__main__":
     move_rcc_files_to_scratch(
         ["TL-19-695788", "TL-19-4A2D28"],
         Path("/group/dseo"),
-        ["seo_tempus_first_seq_data", "seo_tempus_second_seq_data"],
+        ["work/tempus/seo_tempus_first_seq_data", "work/tempus/seo_tempus_second_seq_data"],
         Path("/scratch/g/dseo/rna_seq_temp/"),
     )
