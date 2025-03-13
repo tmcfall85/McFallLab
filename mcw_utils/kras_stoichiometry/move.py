@@ -17,11 +17,11 @@ def move_rcc_file_to_scratch(
         acc_rna_folder = acc_folder / "RNA"
         if acc_rna_folder.is_dir():
             rna_folder_exists = True
-            bam_file = acc_rna_folder / f"{accession_number}_alig_csort.bam"
-            if bam_file.is_file():
-                bam_file_exists = True
-                dest_file = scratch_dir / f"{accession_number}_alig_csort.bam"
-                shutil.copy(str(bam_file), str(dest_file))
+            for item in acc_rna_folder.iterdir():
+                if item.suffix == '.bam' and item.is_file()
+                    bam_file_exists = True
+                    dest_file = scratch_dir / item.name
+                    shutil.copy(str(item), str(dest_file))
             else:
                 bam_file_exists = False
         else:
@@ -54,7 +54,7 @@ def move_rcc_files_to_scratch(
             acc_numbers_exists.append(acc_number_exists)
             rna_folders_exists.append(rna_folder_exists)
             bam_files_exists.append(bam_file_exists)
-            tempus_dirs.append(tempus_dir)
+            tempus_dirs.append(tempus_dir / accession_number)
 
     move_report = pd.DataFrame(
         {
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     acc_file = pd.read_csv(sys.argv[2])
     out_dir = sys.argv[3]
     sub_dirs = sys.argv[4:]
-    
+
     move_rcc_files_to_scratch(
         acc_file.accession_id.values,
         Path(f"/group/{user}"),
