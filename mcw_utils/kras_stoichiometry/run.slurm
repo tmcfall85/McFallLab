@@ -14,5 +14,6 @@ python -m venv stoichiometryEnv
 source stoichiometryEnv/bin/activate
 
 pip install requirements.txt
+pip show pysam
 
 python measure.py /scratch/g/dseo/rna_seq_temp
