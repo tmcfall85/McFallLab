@@ -36,7 +36,6 @@ def move_rcc_file_to_scratch(
 def move_rcc_files_to_scratch(
     accession_numbers: list[str],
     group_dir: PosixPath,
-    group_subdirs: list[str],
     scratch_dir: PosixPath,
 ):
     acc_numbers_exists = []
@@ -44,15 +43,15 @@ def move_rcc_files_to_scratch(
     bam_files_exists = []
     tempus_dirs = []
     for accession_number in accession_numbers:
-        for group_subdir in group_subdirs:
-            tempus_dir = group_dir / group_subdir
-            acc_number_exists, rna_folder_exists, bam_file_exists = (
-                move_rcc_file_to_scratch(accession_number, tempus_dir, scratch_dir)
-            )
-            acc_numbers_exists.append(acc_number_exists)
-            rna_folders_exists.append(rna_folder_exists)
-            bam_files_exists.append(bam_file_exists)
-            tempus_dirs.append(tempus_dir / accession_number)
+        for tempus_dir in group_dir.iterdir():
+            if tempus_dir.is_dir():
+                acc_number_exists, rna_folder_exists, bam_file_exists = (
+                    move_rcc_file_to_scratch(accession_number, tempus_dir, scratch_dir)
+                )
+                acc_numbers_exists.append(acc_number_exists)
+                rna_folders_exists.append(rna_folder_exists)
+                bam_files_exists.append(bam_file_exists)
+                tempus_dirs.append(tempus_dir / accession_number)
 
     move_report = pd.DataFrame(
         {
@@ -67,13 +66,12 @@ def move_rcc_files_to_scratch(
 
 if __name__ == "__main__":
     user = sys.argv[1]
-    acc_file = pd.read_csv(sys.argv[2])
+    in_dir = sys.argv2[2]
     out_dir = sys.argv[3]
-    sub_dirs = sys.argv[4:]
+    acc_file = pd.read_csv(sys.argv[4])
 
     move_rcc_files_to_scratch(
         acc_file.accession_id.values,
-        Path(f"/group/{user}"),
-        sub_dirs,
-        Path(f"/scratch/g/{user}/rna_seq_temp/"),
+        Path(f"/group/{user}/{in_dir}"),
+        Path(f"/scratch/g/{user}/{out_dir}/"),
     )
