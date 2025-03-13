@@ -2,7 +2,7 @@ import pandas as pd
 import pysam
 from dataclasses import dataclass, field
 from pathlib import Path
-
+import sys
 
 def get_reverse(seq):
     rev_seq = []
@@ -108,3 +108,8 @@ class RNAseqRas:
     def write(self):
         self.output_counts.to_csv(self.bam_dir / 'ras_output_counts.csv', index=False)
 
+
+if __name__ == "__main__":
+    rnaseq_ras = RNAseqRas(sys.argv[1])
+    rnaseq_ras.measure()
+    rnaseq_ras.write()
