@@ -10,8 +10,6 @@ def move_rcc_file_to_scratch(
 ):
 
     acc_folder = group_dir / accession_number
-    print(acc_folder)
-    print(acc_folder.is_dir())
     if acc_folder.is_dir():
         acc_number_exists = True
         acc_rna_folder = acc_folder / "RNA"

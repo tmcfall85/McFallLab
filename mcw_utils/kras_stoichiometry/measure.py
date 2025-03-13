@@ -59,6 +59,7 @@ class RNAseqRas:
         })
 
     def _measure_g12d_stoichiometry(self, fname: str):
+        print(f'Measuring kras stoichiometry in: {fname}')
         pysam.index(str(fname))
         samfile = pysam.AlignmentFile(fname, "rb")
 
