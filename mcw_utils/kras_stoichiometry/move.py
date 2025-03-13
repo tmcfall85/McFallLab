@@ -9,6 +9,8 @@ def move_rcc_file_to_scratch(
 ):
 
     acc_folder = group_dir / accession_number
+    print(acc_folder)
+    print(acc_folder.is_dir())
     if acc_folder.is_dir():
         acc_number_exists = True
         acc_rna_folder = acc_folder / "RNA"
@@ -61,7 +63,7 @@ def move_rcc_files_to_scratch(
             "bam_file_exists": bam_files_exists,
         }
     )
-    move_report.to_csv(scratch_dir / "move_report.csv")
+    move_report.to_csv(scratch_dir / "move_report.csv", index=False)
 
 
 if __name__ == "__main__":
