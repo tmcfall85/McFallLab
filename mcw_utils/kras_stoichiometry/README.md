@@ -23,3 +23,14 @@ update as needed
 update run.slurm if needed, then run:
 
 `sbatch run.slurm`
+
+# Troubleshooting
+Is the environment not working? Are you missing packages?  Well I put them in a venv on RCC.  I have no idea if this will stick around, but this is the venv I created:
+
+```
+python -m venv stoichiometryEnv
+source stoichiometryEnv/bin/activate
+
+pip install pysam
+pip install pandas
+```
