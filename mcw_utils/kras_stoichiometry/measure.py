@@ -62,25 +62,31 @@ class RNAseqRas:
         print(f'Measuring kras stoichiometry in: {fname}')
         pysam.index(str(fname))
         samfile = pysam.AlignmentFile(fname, "rb")
+        # find valid contigs
+        contig_names = set([record['SN'] for record in samfile.header['SQ']])
+        if 'chr12' in contig_names:
+            contig_prefix = 'chr'
+        else:
+            contig_prefix = ''
 
         kras = []
         hras = []
         nras = []
         other_codons = []
-        for read in samfile.fetch('chr12', 25209798,25245384):
+        for read in samfile.fetch(f'{contig_prefix}12', 25209798,25245384):
             kras.append(read)
 
-        for read in samfile.fetch('chr11', 532693, 534322):
+        for read in samfile.fetch(f'{contig_prefix}11', 532693, 534322):
             hras.append(read)
             
-        for read in samfile.fetch('chr1', 114708538, 114716160):
+        for read in samfile.fetch(f'{contig_prefix}1', 114708538, 114716160):
             nras.append(read) 
 
         wt_count = 0
         g12d_count = 0
         other_count = 0
 
-        for read in samfile.fetch('chr12', 25245349, 25245351):
+        for read in samfile.fetch(f'{contig_prefix}12', 25245349, 25245351):
             codon = []
             for ap in read.aligned_pairs:
                 if ap[1] is not None and ap[1] >= 25245349-1 and ap[1] <= 25245351-1:
