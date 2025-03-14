@@ -26,6 +26,10 @@ class RNAseqRas:
     unknown_kras_count: list[int] = field(default_factory=list)
     wt_kras_count: list[int] = field(default_factory=list)
     g12d_kras_count: list[int] = field(default_factory=list)
+    g12v_kras_count: list[int] = field(default_factory=list)
+    g12r_kras_count: list[int] = field(default_factory=list)
+    g12c_kras_count: list[int] = field(default_factory=list)
+    g12a_kras_count: list[int] = field(default_factory=list)
     other_kras_count: list[int] = field(default_factory=list)
     nras_count: list[int] = field(default_factory=list)
     hras_count: list[int] = field(default_factory=list)
@@ -46,12 +50,15 @@ class RNAseqRas:
     def measure(self):
         for fname in self.fnames:
             self._measure_g12d_stoichiometry(fname)
-        
         self.output_counts = pd.DataFrame({
             'accession_number': self.accession_numbers,
             'unknown_kras_count': self.unknown_kras_count,
             'wt_kras_count': self.wt_kras_count,
             'g12d_kras_count': self.g12d_kras_count,
+            'g12v_kras_count': self.g12v_kras_count,
+            'g12r_kras_count': self.g12r_kras_count,
+            'g12c_kras_count': self.g12c_kras_count,
+            'g12a_kras_count': self.g12a_kras_count,
             'other_kras_count': self.other_kras_count,
             'nras_count': self.nras_count,
             'hras_count': self.hras_count,
@@ -84,22 +91,37 @@ class RNAseqRas:
 
         wt_count = 0
         g12d_count = 0
+        g12v_count = 0
+        g12r_count = 0
+        g12c_count = 0
+        g12a_count = 0
         other_count = 0
 
         for read in samfile.fetch(f'{contig_prefix}12', 25245349, 25245351):
             codon = []
             for ap in read.aligned_pairs:
                 if ap[1] is not None and ap[1] >= 25245349-1 and ap[1] <= 25245351-1:
-                    #print(ap)
-                    if read.is_forward:                
-                        codon.append(get_reverse(str(read.get_forward_sequence()))[ap[0]])
-                    else:                
-                        codon.append(str(read.get_forward_sequence())[::-1][ap[0]])
+                    if ap[0] is not None:
+                        if read.is_forward:           
+                            codon.append(get_reverse(str(read.get_forward_sequence()))[ap[0]])
+                        else:  
+                            codon.append(str(read.get_forward_sequence())[::-1][ap[0]])
+                    else:    
+                        codon.append('?')
+                    
             codon = ''.join(codon)[::-1]
             if codon in ['GGT', 'GGC', 'GGA', 'GGG']:
                 wt_count +=1
             elif codon in ['GAT', 'GAC']:
                 g12d_count += 1
+            elif codon in ['GTT', 'GTC', 'GTA', 'GTG']:
+                g12v_count += 1
+            elif codon in ['AGA', 'AGG', 'CGT', 'CGC','CGA','CGG']:
+                g12r_count += 1
+            elif codon in ['TGT', 'TGC']:
+                g12c_count += 1
+            elif codon in ['GCT', 'GCC', 'GCA', 'GCG']:
+                g12a_count += 1
             else:
                 other_count += 1
                 other_codons.append(codon)
@@ -107,6 +129,10 @@ class RNAseqRas:
         self.unknown_kras_count.append(len(kras))
         self.wt_kras_count.append(wt_count)
         self.g12d_kras_count.append(g12d_count)
+        self.g12v_kras_count.append(g12v_count)
+        self.g12r_kras_count.append(g12r_count)
+        self.g12c_kras_count.append(g12c_count)
+        self.g12a_kras_count.append(g12a_count)
         self.other_kras_count.append(other_count)
         self.nras_count.append(len(nras))
         self.hras_count.append(len(hras))
