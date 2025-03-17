@@ -1,8 +1,9 @@
-import pandas as pd
-import pysam
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-import sys
+
+import pandas as pd
+import pysam
 
 
 def get_reverse(seq):
@@ -47,22 +48,18 @@ class RNAseqRas:
     def measure(self):
         merged_data = pd.read_csv(self.bam_dir / "tempus_json_pdac_rcc_merged.csv")
         for fname in self.fnames:
-            pysam.index(str(fname))
+            if fname.with_suffix(".bam.bai").is_file() == False:
+                # Create index file
+                pysam.index(str(fname))
             accession_number = fname.name.split("_")[0]
             merged_acc_number = merged_data[merged_data.acc_num == accession_number]
             merged_acc_number_dna_report = merged_acc_number[
                 merged_acc_number.report_type == "DNA"
             ]
             if len(merged_acc_number_dna_report) == 1:
-                if merged_acc_number_dna_report.kras_variants != "":
-
-                    self._measure_kras_variant_stoichiometry(
-                        fname, merged_acc_number_dna_report.kras_variants
-                    )
-                else:
-                    print(
-                        f"No reported kras variant for accession number: {accession_number}"
-                    )
+                self._measure_kras_variant_stoichiometry(
+                    fname, merged_acc_number_dna_report.iloc[0].kras_variants
+                )
             else:
                 print(f"No DNA report for accession number: {accession_number}")
         self.output_counts = pd.DataFrame(
@@ -102,80 +99,89 @@ class RNAseqRas:
         for read in samfile.fetch(f"{contig_prefix}1", 114708538, 114716160):
             nras.append(read)
 
+        self.unknown_kras_count.append(len(kras))
+        self.nras_count.append(len(nras))
+        self.hras_count.append(len(hras))
+
         wt_count = 0
         variant_count = 0
         other_count = 0
+        if kras_variants != "" and isinstance(kras_variants, str):
+            if kras_variants.find("G12") > -1:
+                gene_start = 25245349
+                wt_codons = ["GGT", "GGC", "GGA", "GGG"]
+                if kras_variants.find("G12D") > -1:
+                    variant_codons = ["GAT", "GAC"]
+                elif kras_variants.find("G12V") > -1:
+                    variant_codons = ["GTT", "GTC", "GTA", "GTG"]
+                elif kras_variants.find("G12R") > -1:
+                    variant_codons = ["AGA", "AGG", "CGT", "CGC", "CGA", "CGG"]
+                elif kras_variants.find("G12C") > -1:
+                    variant_codons = ["TGT", "TGC"]
+                elif kras_variants.find("G12A") > -1:
+                    variant_codons = ["GCT", "GCC", "GCA", "GCG"]
+                else:
+                    print(f"UNIQUE VARIANT FOUND: {kras_variants}")
+                    variant_codons = []
+            elif kras_variants.find("G13") > -1:
+                gene_start = 25245346
+                wt_codons = ["GGT", "GGC", "GGA", "GGG"]
+                if kras_variants.find("G12D") > -1:
+                    variant_codons = ["GAT", "GAC"]
+                elif kras_variants.find("G12C") > -1:
+                    variant_codons = ["TGT", "TGC"]
+                else:
+                    print(f"UNIQUE VARIANT FOUND: {kras_variants}")
+                    variant_codons = []
+            elif kras_variants.find("Q61") > -1:
+                gene_start = 25227341
+                wt_codons = ["CAA", "CAG"]
+                if kras_variants.find("Q61H") > -1:
+                    variant_codons = ["CAT", "CAC"]
+                elif kras_variants.find("Q61L") > -1:
+                    variant_codons = ["CTT", "CTC", "CTA", "CTG"]
+                elif kras_variants.find("Q61R") > -1:
+                    variant_codons = ["AGA", "AGG", "CGT", "CGC", "CGA", "CGG"]
+                else:
+                    print(f"UNIQUE VARIANT FOUND: {kras_variants}")
+                    variant_codons = []
+            else:
+                print(f"CODON NOT YET DEFINED: {kras_variants}")
+                gene_start = 25245349
+                wt_codons = []
+                variant_codons = []
 
-        if kras_variants.find("G12") > -1:
-            gene_start = 25245349
-            wt_codons = ["GGT", "GGC", "GGA", "GGG"]
-            if kras_variants.find("G12D"):
-                variant_codons = ["GAT", "GAC"]
-            elif kras_variants.find("G12V"):
-                variant_codons = ["GTT", "GTC", "GTA", "GTG"]
-            elif kras_variants.find("G12R"):
-                variant_codons = ["AGA", "AGG", "CGT", "CGC", "CGA", "CGG"]
-            elif kras_variants.find("G12C"):
-                variant_codons = ["TGT", "TGC"]
-            elif kras_variants.find("G12A"):
-                variant_codons = ["GCT", "GCC", "GCA", "GCG"]
-            else:
-                print(f"UNIQUE VARIANT FOUND: {kras_variants}")
-                variant_codons = []
-        elif kras_variants.find("G13") > -1:
-            gene_start = 25245346
-            wt_codons = ["GGT", "GGC", "GGA", "GGG"]
-            if kras_variants.find("G12D"):
-                variant_codons = ["GAT", "GAC"]
-            elif kras_variants.find("G12C"):
-                variant_codons = ["TGT", "TGC"]
-            else:
-                print(f"UNIQUE VARIANT FOUND: {kras_variants}")
-                variant_codons = []
-        elif kras_variants.find("Q61") > -1:
-            gene_start = 25227341
-            wt_codons = ["CAA", "CAG"]
-            if kras_variants.find("Q61H"):
-                variant_codons = ["CAT", "CAC"]
-            elif kras_variants.find("Q61L"):
-                variant_codons = ["CTT", "CTC", "CTA", "CTG"]
-            elif kras_variants.find("Q61R"):
-                variant_codons = ["AGA", "AGG", "CGT", "CGC", "CGA", "CGG"]
-            else:
-                print(f"UNIQUE VARIANT FOUND: {kras_variants}")
-                variant_codons = []
-        else:
-            print(f"CODON NOT YET DEFINED: {kras_variants}")
-            gene_start = 25245349
-            wt_codons = []
-            variant_codons = []
-
-        for read in samfile.fetch(f"{contig_prefix}12", gene_start, gene_start + 2):
-            codon = []
-            for ap in read.aligned_pairs:
-                if (
-                    ap[1] is not None
-                    and ap[1] >= gene_start - 1
-                    and ap[1] <= gene_start + 1
-                ):
-                    if ap[0] is not None:
-                        if read.is_forward:
-                            codon.append(
-                                get_reverse(str(read.get_forward_sequence()))[ap[0]]
-                            )
+            for read in samfile.fetch(f"{contig_prefix}12", gene_start, gene_start + 2):
+                codon = []
+                for ap in read.aligned_pairs:
+                    if (
+                        ap[1] is not None
+                        and ap[1] >= gene_start - 1
+                        and ap[1] <= gene_start + 1
+                    ):
+                        if ap[0] is not None:
+                            if read.is_forward:
+                                codon.append(
+                                    get_reverse(str(read.get_forward_sequence()))[ap[0]]
+                                )
+                            else:
+                                codon.append(
+                                    str(read.get_forward_sequence())[::-1][ap[0]]
+                                )
                         else:
-                            codon.append(str(read.get_forward_sequence())[::-1][ap[0]])
-                    else:
-                        codon.append("?")
+                            codon.append("?")
 
-            codon = "".join(codon)[::-1]
-            if codon in wt_codons:
-                wt_count += 1
-            elif codon in variant_codons:
-                variant_count += 1
-            else:
-                other_count += 1
-                other_codons.append(codon)
+                codon = "".join(codon)[::-1]
+                if codon in wt_codons:
+                    wt_count += 1
+                elif codon in variant_codons:
+                    variant_count += 1
+                else:
+                    other_count += 1
+                    other_codons.append(codon)
+
+        else:
+            print(f"No reported kras variant for accession number: {fname.name}")
 
         self.wt_kras_count.append(wt_count)
         self.variant_kras_count.append(variant_count)
