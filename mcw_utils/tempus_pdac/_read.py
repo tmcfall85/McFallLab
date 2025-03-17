@@ -63,19 +63,20 @@ def _read_tempus_files_in_directory(directory_path):
                         accession_id.append(data["order"]["accessionId"])
                         report_type.append(data["report"]["workflow"]["reportType"])
                         has_kras_variant = False
-                        if report_type == "DNA":
+                        if report_type[-1] == "DNA":
                             muts = data["results"][
                                 "somaticPotentiallyActionableMutations"
                             ]
                             for mut in muts:
                                 if mut["gene"] == "KRAS":
                                     mut_kras_variants = []
-                                    for variant in mut["gene"]["variants"]:
+                                    for variant in mut["variants"]:
                                         mut_kras_variants.append(
                                             variant["mutationEffect"]
                                         )
                                     has_kras_variant = True
                                     kras_variants.append("_".join(mut_kras_variants))
+
                         if has_kras_variant == False:
                             kras_variants.append("")
 
