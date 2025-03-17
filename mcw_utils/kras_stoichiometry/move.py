@@ -16,7 +16,7 @@ def move_rcc_file_to_scratch(
         if acc_rna_folder.is_dir():
             rna_folder_exists = True
             for item in acc_rna_folder.iterdir():
-                if item.suffix == '.bam' and item.is_file():
+                if item.suffix == ".bam" and item.is_file():
                     bam_file_exists = True
                     dest_file = scratch_dir / item.name
                     shutil.copy(str(item), str(dest_file))
