@@ -61,7 +61,7 @@ class RNAseqRas:
                     fname, merged_acc_number_dna_report.iloc[0].kras_variants
                 )
             else:
-                print(f"No DNA report for accession number: {accession_number}")
+                self._measure_kras_variant_stoichiometry(fname, "")
         self.output_counts = pd.DataFrame(
             {
                 "accession_number": self.accession_numbers,
