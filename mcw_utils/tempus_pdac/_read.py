@@ -25,6 +25,7 @@ def _read_tempus_files_in_directory(directory_path):
     acc_num = []
     accession_id = []
     report_id = []
+    kras_variants = []
     report_type = []
     bio_inf_pipeline_version = []
     tempus_id = []
@@ -61,6 +62,23 @@ def _read_tempus_files_in_directory(directory_path):
                         acc_num.append(file_path.parts[-1])
                         accession_id.append(data["order"]["accessionId"])
                         report_type.append(data["report"]["workflow"]["reportType"])
+                        has_kras_variant = False
+                        if report_type == "DNA":
+                            muts = data["results"][
+                                "somaticPotentiallyActionableMutations"
+                            ]
+                            for mut in muts:
+                                if mut["gene"] == "KRAS":
+                                    mut_kras_variants = []
+                                    for variant in mut["gene"]["variants"]:
+                                        mut_kras_variants.append(
+                                            variant["mutationEffect"]
+                                        )
+                                    has_kras_variant = True
+                                    kras_variants.append("_".join(mut_kras_variants))
+                        if has_kras_variant == False:
+                            kras_variants.append("")
+
                         report_id.append(data["report"]["reportId"])
                         bio_inf_pipeline_version.append(
                             data["report"]["bioInfPipeline"]
@@ -91,6 +109,7 @@ def _read_tempus_files_in_directory(directory_path):
             "bio_inf_pipeline_version": bio_inf_pipeline_version,
             "tempus_id": tempus_id,
             "test_code": test_code,
+            "kras_variants": kras_variants,
             "specimen_count": specimen_count,
             "specimen_sample_category": specimen_sample_category,
             "specimen_sample_site": specimen_sample_site,
