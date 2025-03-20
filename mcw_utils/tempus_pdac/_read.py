@@ -26,6 +26,8 @@ def _read_tempus_files_in_directory(directory_path):
     accession_id = []
     report_id = []
     kras_variants = []
+    variants = []
+    msi = []
     report_type = []
     bio_inf_pipeline_version = []
     tempus_id = []
@@ -35,7 +37,6 @@ def _read_tempus_files_in_directory(directory_path):
     specimen_sample_site = []
     specimen_block_id = []
     specimen_tumor_percentage = []
-
     for file_path in directory.iterdir():
         if file_path.is_dir():
             for inner_file_path in file_path.iterdir():
@@ -57,13 +58,20 @@ def _read_tempus_files_in_directory(directory_path):
                                 )
                             ).hexdigest()
                         )
-                        # hashed_patient_id.append(data['patient']['firstName'] + data['patient']['lastName'])
+                        
                         schema_version.append(data["metadata"]["schemaVersion"])
                         acc_num.append(file_path.parts[-1])
                         accession_id.append(data["order"]["accessionId"])
                         report_type.append(data["report"]["workflow"]["reportType"])
+                        
                         has_kras_variant = False
                         if report_type[-1] == "DNA":
+                            if data["metadata"]["schemaVersion"] in ["1.3.1", "1.3.2"]:
+                                msi.append(data["results"]["msiStatus"] == "stable")
+                            else:
+                                msi.append(data["results"]["microsatelliteInstability"]["status"])
+
+                            mut_variants = []
                             muts = data["results"][
                                 "somaticPotentiallyActionableMutations"
                             ]
@@ -75,7 +83,61 @@ def _read_tempus_files_in_directory(directory_path):
                                             variant["mutationEffect"]
                                         )
                                     has_kras_variant = True
-                                    kras_variants.append("_".join(mut_kras_variants))
+                                    kras_variants.append("|".join(mut_kras_variants))
+
+                                for variant in mut["variants"]:
+                                    mut_variants.append(
+                                        f'{mut["gene"]}:{variant["mutationEffect"]}:somatic:potentially_actionable'
+                                    )
+                            
+                            muts = data["results"][
+                                "somaticBiologicallyRelevantVariants"
+                            ]
+                            
+                            for mut in muts:
+                                mut_variants.append(
+                                    f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:biologically_relevant'
+                                )
+
+                            muts = data["results"][
+                                "somaticVariantsOfUnknownSignificance"
+                            ] 
+                            for mut in muts:
+                                mut_variants.append(
+                                    f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:unknown_significance'
+                                )
+                            
+                            muts = data["results"][
+                                "fusionVariants"
+                            ] 
+                            for mut in muts:
+                                mut_variants.append(
+                                    f'gene5={mut["gene5"]}-gene3={mut["gene3"]}:{mut["variantDescription"]}:fusion:unknown_significance'
+                                )
+
+                            muts = data["results"][
+                                "inheritedRelevantVariants"
+                            ]["values"]
+                            for mut in muts:
+                                mut_variants.append(
+                                    f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:biologically_relevant'
+                                )
+
+                            muts = data["results"][
+                                "inheritedVariantsOfUnknownSignificance"
+                            ]["values"]
+                            for mut in muts:
+                                mut_variants.append(
+                                    f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:unknown_significance'
+                                )
+
+                            if len(mut_variants) == 0:
+                                mut_variants.append("none:none:none:none")
+                            variants.append("|".join(mut_variants))
+                            
+                        else:
+                            msi.append(None)
+                            variants.append("")
 
                         if has_kras_variant == False:
                             kras_variants.append("")
@@ -111,6 +173,8 @@ def _read_tempus_files_in_directory(directory_path):
             "tempus_id": tempus_id,
             "test_code": test_code,
             "kras_variants": kras_variants,
+            "variants": variants,
+            "msi": msi,
             "specimen_count": specimen_count,
             "specimen_sample_category": specimen_sample_category,
             "specimen_sample_site": specimen_sample_site,

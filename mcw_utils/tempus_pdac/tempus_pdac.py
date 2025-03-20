@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 from ffile import Ffile
 
-from ._util import trim_emrn, trim_hashed_patient_name, trim_mrn
+from ._util import trim_emrn, trim_hashed_patient_name, trim_mrn, make_tall_variants
 
 
 @dataclass
@@ -105,7 +105,13 @@ class TempusPdac:
             value={"has_rcc_bam_file": False}, inplace=True
         )
         self.tempus_pdac_manifest_rcc.to_csv(
-            self.outdir / "tempus_json_pdac_rcc_merged.csv"
+            self.outdir / "tempus_json_pdac_rcc_merged.csv", index=False
+        )
+        self.tempus_pdac_manifest_rcc_dna_tall = make_tall_variants(
+            self.tempus_pdac_manifest_rcc
+        )
+        self.tempus_pdac_manifest_rcc_dna_tall.to_csv(
+            self.outdir / "tempus_json_pdac_rcc_merged_dna_tall.csv", index=False
         )
         tempus_pdac_with_meta_has_rcc = self.tempus_pdac_manifest_rcc[
             self.tempus_pdac_manifest_rcc.has_rcc_bam_file == True

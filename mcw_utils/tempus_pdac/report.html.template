@@ -48,6 +48,9 @@
     <h2>Merged Data Set (CSV):</h2>
     <a href="tempus_json_pdac_rcc_merged.csv" download>tempus_json_pdac_rcc_merged.csv</a>
 
+    <h2>Merged Tall Data Set - DNA reports (CSV):</h2>
+    <a href="tempus_json_pdac_rcc_merged_dna_tall.csv" download>tempus_json_pdac_rcc_merged_dna_tall.csv</a>
+
     <h2>RNA files on RCC with PDAC SOTB (CSV):</h2>
     <a href="RNA_rcc_bam_with_pdac_sotb_mrn.csv" download>RNA_rcc_bam_with_pdac_sotb_mrn.csv</a>
 

@@ -146,3 +146,22 @@ def count_dna_reports(df):
 
 def count_rna_reports(df):
     return len(df[df.report_type == "RNA"])
+
+
+def make_tall_variants(df):
+    c = []
+    for col in df.columns:
+        if col != "variants":
+            c.append(col)
+    tall = []
+    for i in range(len(df)):
+        if isinstance(df.iloc[i].variants, str) and not df.iloc[i].variants == "":
+            variants = df.iloc[i].variants.split("|")
+            for variant in variants:
+                gene, mut, source, comment = variant.split(":")
+                tall.append(
+                    pd.concat(
+                        [df.iloc[i][c], pd.Series({"gene": gene, "variant": mut, "source": source, "comment": comment})]
+                    )
+                )
+    return pd.concat(tall, axis=1).T
