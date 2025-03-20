@@ -20,14 +20,30 @@ def any_dna_json(df):
     return np.any(df.report_type == "DNA")
 
 
+def label_by_bmi(pdac_sotb, patients):
+    inner_patients = patients.copy()
+    inner_patients["mrn"] = None
+    for i in range(len(inner_patients)):
+        filt = pdac_sotb[pdac_sotb.bmi == inner_patients.iloc[i]["BMI at diagnosis"]]
+        filt = filt[filt.bmi_restaging == inner_patients.iloc[i]["BMI at pre-op"]]
+        if len(filt) == 1:
+            inner_patients.loc[i, "mrn"] = filt.iloc[0].mrn
+        else:
+            if np.isnan(inner_patients.iloc[i]["Tissue Bank Number"]) == False:
+                print(f"No unique BMI label found for {inner_patients.iloc[i]}")
+    return inner_patients
+
+
 def label(merged_tempus_fname: str, patients_fname: str, pdac_sotb_fname: str):
 
     merged_tempus = pd.read_csv(merged_tempus_fname)
     patients = pd.read_excel(patients_fname)
     pdac_sotb = pd.read_stata(pdac_sotb_fname)
 
-    control = patients.loc[:19, :]
-    test = patients.loc[22:, :]
+    patients_labeled = label_by_bmi(pdac_sotb, patients)
+
+    control = patients_labeled.loc[:19, :]
+    test = patients_labeled.loc[22:, :]
 
     control_merged = control.merge(merged_tempus, on="mrn", how="left")
     test_merged = test.merge(merged_tempus, on="mrn", how="left")
