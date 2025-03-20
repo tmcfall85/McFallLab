@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Images with Separator</title>
+    <style>
+        body {{
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }}
+
+        pre {{
+            background-color: #f4f4f4;
+            padding: 20px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }}
+
+        .image-container {{
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            /* Space between the images */
+            margin: 20px;
+        }}
+
+        .separator {{
+            border-top: 2px solid #000;
+            margin: 20px 0;
+        }}
+    </style>
+</head>
+
+<body>
+    <h1>Input files:</h1>
+
+    <!-- This is where the JSON data will be displayed -->
+    <pre id="json-output">
+        pdac_sotb_fname: {pdac_sotb_fname} <br>
+        tempus_dirs: {tempus_dirs} <br>
+        tempus_manifest_fname: {tempus_manifest_fname} <br>
+        rcc_fname: {rcc_fname} <br>
+    </pre>
+
+    <h2>Merged Data Set (CSV):</h2>
+    <a href="tempus_json_pdac_rcc_merged.csv" download>tempus_json_pdac_rcc_merged.csv</a>
+
+    <h2>RNA files on RCC with PDAC SOTB (CSV):</h2>
+    <a href="RNA_rcc_bam_with_pdac_sotb_mrn.csv" download>RNA_rcc_bam_with_pdac_sotb_mrn.csv</a>
+
+    <div class="image-container">
+        {fig1}
+        <img src="patient_count_pdac_tempus_table.png" alt="Figure 2" />
+    </div>
+    <br>CSV file with patients missing from PDAC data pull that have Tempus JSON:<br>
+    <a href="patients_with_json_missing_from_pdac_data_pull.csv"
+        download>patients_with_json_missing_from_pdac_data_pull.csv</a>
+
+    <div class="separator"></div>
+
+
+    <div class="image-container">
+        {fig2}
+        <img src="tempus_patient_count_dna_vs_rna_table.png" alt="Figure 4" />
+    </div>
+    <div class="separator"></div>
+
+    <div class="image-container">
+        {fig3}
+        <img src="reports_with_tempus_files_table.png" alt="Figure 4" />
+    </div>
+    <br>CSV file with missing DNA Tempus JSON:<br>
+    <a href="tempus_pdac_merged_missing_dna_json.csv" download>tempus_pdac_merged_missing_dna_json.csv</a>
+    <br>CSV file with missing RNA Tempus JSON:<br>
+    <a href="tempus_pdac_merged_missing_rna_json.csv" download>tempus_pdac_merged_missing_rna_json.csv</a>
+    <div class="separator"></div>
+
+    <div class="image-container">
+        {fig4}
+        <img src="tempus_json_joining_to_rcc_bam_files_table.png" alt="Figure 4" />
+    </div>
+    <br>CSV file with missing RCC files that have Tempus JSON:<br>
+    <a href="tempus_json_files_missing_rcc_bam.csv" download>tempus_json_files_missing_rcc_bam.csv</a>
+    <div class="separator"></div>
+
+
+</body>
+
+</html>

@@ -1,0 +1,18 @@
+# pyproject.toml
+[build-system]
+requires = ["setuptools>=42", "wheel"]  # Build dependencies (setuptools & wheel are the most common)
+build-backend = "setuptools.build_meta"  # The backend build tool (setuptools in this case)
+
+[tool.setuptools]
+packages = ["mcw_utils"]
+
+[project]
+name = "mcw_utils"
+version = "0.1.0"
+description = "Utilities for working at MCW"
+authors = [
+  { name = "Matthew Sochor", email = "msochor@mcw.edu" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+dependencies = []
