@@ -299,7 +299,7 @@ def main(args):
     write_json(star_log_qc.to_ordered_dict(), re.sub(r"\.out$", ".json", star_log_path))
 
 
-if __name__ == "__main__":
+def cli():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--fastqs_R1", nargs="+", help="Input gzipped fastq(s) belonging to read1"

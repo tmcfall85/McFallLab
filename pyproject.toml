@@ -15,4 +15,5 @@ authors = [
 ]
 license = { text = "MIT" }
 readme = "README.md"
+entry_points={"console_scripts": ["mcw_utils_align = mcw_utils.rna_seq_pipeline.align:cli"]},
 dependencies = []
