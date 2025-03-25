@@ -118,7 +118,7 @@ def main(args):
         json.dump(qc_record.to_ordered_dict(), f)
 
 
-if __name__ == "__main__":
+def cli():
     parser = argparse.ArgumentParser()
     parser.add_argument("--rsem_index", type=str, help="RSEM index gzipped tar")
     parser.add_argument("--anno_bam", type=str, help="STAR alignment to annotation.")
