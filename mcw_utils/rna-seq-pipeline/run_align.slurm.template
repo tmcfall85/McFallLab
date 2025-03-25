@@ -1,0 +1,16 @@
+#!/bin/bash
+#SBATCH --job-name={fname}-mcw-utils-star-align
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task={cpus_per_task}
+#SBATCH --time=08:00:00
+#SBATCH --output=%x-%j.out
+#SBATCH --account={account}
+
+module load star/{star_version}
+module load python/{python_version}
+module list
+python -m venv rnaseq
+source rnaseq/bin/activate
+pip install qc-utils==19.8.1 ptools_bin==0.0.7
+
+python align.py --fastqs_R1 {fastqs_r1} --fastqs_R2 {fastqs_r2} --endedness paired --index {star_index} --ncpus {cpus_per_task} --ramGB {ram_gb_per_task}
