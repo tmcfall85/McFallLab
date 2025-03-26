@@ -39,7 +39,7 @@ def pipeline(user, out_dir):
                         fastqs_r2 = fastq[1]
                 elif len(fastqs) == 1:
                     fastqs_r1 = fastqs[0]
-                    fastqs_r2 = ""
+                    fastqs_r2 = "none"
                 else:
                     print("Too many or to ofew fastqs found!!")
                     print(fastqs)
