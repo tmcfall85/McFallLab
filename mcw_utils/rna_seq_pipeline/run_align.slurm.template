@@ -12,6 +12,7 @@ module list
 python -m venv rnaseq
 source rnaseq/bin/activate
 pip install qc-utils==19.8.1 ptools_bin==0.0.7
+rm -rf McFallLab/
 git clone https://github.com/tmcfall85/McFallLab.git
 cd McFallLab 
 git checkout {git_branch}
