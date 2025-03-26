@@ -15,9 +15,7 @@ pip install qc-utils==19.8.1 ptools_bin==0.0.7
 git clone https://github.com/tmcfall85/McFallLab.git
 cd McFallLab 
 git checkout {git_branch}
-pip install .
 cd ../
 mkdir -p star_output
-cd star_output
 
-mcw_utils_star_align --fastqs_R1 {fastqs_r1} --fastqs_R2 {fastqs_r2} --endedness {endedness} --index {star_index} --ncpus {cpus_per_task} --ramGB {ram_gb_per_task}
+python ./McFallLab/mcw_utils/rna_seq_pipeline/star_align.py --fastqs_R1 {fastqs_r1} --fastqs_R2 {fastqs_r2} --endedness {endedness} --index {star_index} --ncpus {cpus_per_task} --ramGB {ram_gb_per_task}

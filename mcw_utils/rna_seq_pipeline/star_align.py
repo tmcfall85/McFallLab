@@ -261,7 +261,7 @@ def main(args):
     anno_flagstat_path = os.path.join(cwd, args.bamroot + "_anno_flagstat.txt")
     star_log_path = os.path.join(cwd, args.bamroot + "_Log.final.out")
     os.rename(os.path.join(cwd, "Aligned.sortedByCoord.out.bam"), genome_bam_path)
-    os.rename(os.path.join(cwd, "Log.final.out"), star_log_path)
+    os.rename(os.path.join(cwd, "Log.out"), star_log_path)
     rsem_check_cmd = "rsem-sam-validator {bam_to_check}".format(
         bam_to_check="Aligned.toTranscriptome.out.bam"
     )
