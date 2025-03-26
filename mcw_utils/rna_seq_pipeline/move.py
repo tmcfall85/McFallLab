@@ -8,17 +8,22 @@ import sys
 def move_rcc_file_to_scratch(
     accession_number: str, group_dir: PosixPath, scratch_dir: PosixPath
 ):
+    if scratch_dir.is_dir() == False:
+        scratch_dir.mkdir()
 
     acc_folder = group_dir / accession_number
     if acc_folder.is_dir():
         acc_number_exists = True
-        acc_rna_folder = acc_folder / "RNA"
+        acc_rna_folder = acc_folder / "RNA" / "FastQ"
         if acc_rna_folder.is_dir():
             rna_folder_exists = True
             for item in acc_rna_folder.iterdir():
-                if item.suffix == ".fasta.gz" and item.is_file():
+                if item.suffix == ".tar.gz" and item.is_file():
                     fasta_file_exists = True
-                    dest_file = scratch_dir / item.name
+                    dest_folder = scratch_dir / item.stem
+                    if dest_folder.is_dir() == False:
+                        dest_folder.mkdir()
+                    dest_file = dest_folder / item.name
                     shutil.copy(str(item), str(dest_file))
             else:
                 fasta_file_exists = False
