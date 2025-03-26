@@ -22,6 +22,7 @@ def pipeline(user, out_dir):
                 fastqs = []
                 if item.suffix == ".gz":
                     fastqs.append(item)
+                print(item)
                 print(fastqs)
                 if len(fastqs) == 2:
                     fastqs_r1 = None
