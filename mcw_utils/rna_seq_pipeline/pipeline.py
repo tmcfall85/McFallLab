@@ -18,69 +18,65 @@ def pipeline(user, out_dir):
     rsem_template = Ffile("run_rsem_quant.slurm.template")
     for subfolder in scratch_dir.iterdir():
         if subfolder.is_dir():
+            fastqs = []
             for item in subfolder.iterdir():
-                fastqs = []
                 if item.suffix == ".gz":
                     fastqs.append(item)
-                print(item)
-                print(fastqs)
-                if len(fastqs) == 2:
-                    fastqs_r1 = None
-                    fastqs_r2 = None
-                    for fastq in fastqs:
-                        if fastq.lower().find("r1") > -1:
-                            fastqs_r1 = fastq
-                        elif fastq.lower().find("r1") > -1:
-                            fastqs_r2 = fastq
+            if len(fastqs) == 2:
+                fastqs_r1 = None
+                fastqs_r2 = None
+                for fastq in fastqs:
+                    if fastq.lower().find("r1") > -1:
+                        fastqs_r1 = fastq
+                    elif fastq.lower().find("r1") > -1:
+                        fastqs_r2 = fastq
 
-                    if fastqs_r1 == None or fastqs_r2 == None:
-                        print("cannot assign fastqs to r1 and r2!!!")
-                        print(fastqs)
-                        print("doing it randomly, I guess")
-                        fastqs_r1 = fastq[0]
-                        fastqs_r2 = fastq[1]
-                elif len(fastqs) == 1:
-                    fastqs_r1 = fastqs[0]
-                    fastqs_r2 = "none"
-                else:
-                    print("Too many or to ofew fastqs found!!")
+                if fastqs_r1 == None or fastqs_r2 == None:
+                    print("cannot assign fastqs to r1 and r2!!!")
                     print(fastqs)
-                    raise NameError
-                anno_bam = (
-                    item.parent / "star_output" / "Aligned.toTranscriptome.out.bam"
-                )
+                    print("doing it randomly, I guess")
+                    fastqs_r1 = fastq[0]
+                    fastqs_r2 = fastq[1]
+            elif len(fastqs) == 1:
                 fastqs_r1 = fastqs[0]
-                with open(item.parent / "run_align.slurm", "w") as fp:
-                    fp.write(
-                        star_template.f(
-                            fname=item.stem.split(".")[0],
-                            cpus_per_task=cpus_per_task,
-                            account=user,
-                            star_version=star_version,
-                            python_version=python_version,
-                            git_branch=git_branch,
-                            fastqs_r1=fastqs_r1,
-                            fastqs_r2=fastqs_r2,
-                            endedness=endedness,
-                            star_index=star_index,
-                            ram_gb_per_task=ram_gb_per_task,
-                        )
+                fastqs_r2 = "none"
+            else:
+                print("Too many or to ofew fastqs found!!")
+                print(fastqs)
+                raise NameError
+            anno_bam = subfolder / "star_output" / "Aligned.toTranscriptome.out.bam"
+            fastqs_r1 = fastqs[0]
+            with open(subfolder / "run_align.slurm", "w") as fp:
+                fp.write(
+                    star_template.f(
+                        fname=item.stem.split(".")[0],
+                        cpus_per_task=cpus_per_task,
+                        account=user,
+                        star_version=star_version,
+                        python_version=python_version,
+                        git_branch=git_branch,
+                        fastqs_r1=fastqs_r1,
+                        fastqs_r2=fastqs_r2,
+                        endedness=endedness,
+                        star_index=star_index,
+                        ram_gb_per_task=ram_gb_per_task,
                     )
-                with open(item.parent / "run_rsem_quant.slurm", "w") as fp:
-                    fp.write(
-                        rsem_template.f(
-                            fname=item.stem.split(".")[0],
-                            cpus_per_task=cpus_per_task,
-                            account=user,
-                            rsem_version=rsem_version,
-                            python_version=python_version,
-                            git_branch=git_branch,
-                            anno_bam=anno_bam,
-                            endedness=endedness,
-                            rsem_index=rsem_index,
-                            ram_gb_per_task=ram_gb_per_task,
-                        )
+                )
+            with open(subfolder / "run_rsem_quant.slurm", "w") as fp:
+                fp.write(
+                    rsem_template.f(
+                        fname=item.stem.split(".")[0],
+                        cpus_per_task=cpus_per_task,
+                        account=user,
+                        rsem_version=rsem_version,
+                        python_version=python_version,
+                        git_branch=git_branch,
+                        anno_bam=anno_bam,
+                        endedness=endedness,
+                        rsem_index=rsem_index,
+                        ram_gb_per_task=ram_gb_per_task,
                     )
+                )
 
 
 if __name__ == "__main__":
