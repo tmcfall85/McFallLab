@@ -12,5 +12,13 @@ module list
 python -m venv rnaseq
 source rnaseq/bin/activate
 pip install qc-utils==19.8.1 ptools_bin==0.0.7
+git clone https://github.com/tmcfall85/McFallLab.git
+cd McFallLab 
+git checkout {git_branch}
+pip install .
+cd ../
+mkdir -p rsem_output
+cd rsem_output
 
-mwc_utils_rsem_quant --anno_bam {anno_bam} --read_strand unstranded --endedness paired --rsem_index {rsem_index} --ncpus {cpus_per_task} --ramGB {ram_gb_per_task}
+
+mwc_utils_rsem_quant --anno_bam {anno_bam} --read_strand unstranded --endedness {endedness} --rsem_index {rsem_index} --ncpus {cpus_per_task} --ramGB {ram_gb_per_task}

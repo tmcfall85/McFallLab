@@ -17,5 +17,7 @@ cd McFallLab
 git checkout {git_branch}
 pip install .
 cd ../
+mkdir -p star_output
+cd star_output
 
-mcw_utils_star_align --fastqs_R1 {fastqs_r1} --fastqs_R2 {fastqs_r2} --endedness paired --index {star_index} --ncpus {cpus_per_task} --ramGB {ram_gb_per_task}
+mcw_utils_star_align --fastqs_R1 {fastqs_r1} --fastqs_R2 {fastqs_r2} --endedness {endedness} --index {star_index} --ncpus {cpus_per_task} --ramGB {ram_gb_per_task}
