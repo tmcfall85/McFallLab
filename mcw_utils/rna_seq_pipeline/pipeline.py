@@ -44,9 +44,11 @@ def pipeline(user, out_dir):
                     print("Too many or to ofew fastqs found!!")
                     print(fastqs)
                     raise NameError
-                anno_bam = item / "star_output" / "Aligned.toTranscriptome.out.bam"
+                anno_bam = (
+                    item.parent / "star_output" / "Aligned.toTranscriptome.out.bam"
+                )
                 fastqs_r1 = fastqs[0]
-                with open(item / "run_align.slurm", "w") as fp:
+                with open(item.parent / "run_align.slurm", "w") as fp:
                     fp.write(
                         star_template.f(
                             fname=item.stem.split(".")[0],
@@ -62,7 +64,7 @@ def pipeline(user, out_dir):
                             ram_gb_per_task=ram_gb_per_task,
                         )
                     )
-                with open(item / "run_rsem_quant.slurm", "w") as fp:
+                with open(item.parent / "run_rsem_quant.slurm", "w") as fp:
                     fp.write(
                         rsem_template.f(
                             fname=item.stem.split(".")[0],
