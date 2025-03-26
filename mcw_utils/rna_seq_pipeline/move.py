@@ -19,7 +19,7 @@ def move_rcc_file_to_scratch(
             rna_folder_exists = True
             for item in acc_rna_folder.iterdir():
                 print(item)
-                if item.suffix == ".tar.gz" and item.is_file():
+                if item.suffix == ".gz" and item.is_file():
                     print("hiya!!")
                     fasta_file_exists = True
                     dest_folder = scratch_dir / item.stem
