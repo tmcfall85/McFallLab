@@ -66,7 +66,7 @@ def move_rcc_files_to_scratch(
 
 if __name__ == "__main__":
     user = sys.argv[1]
-    in_dir = sys.argv2[2]
+    in_dir = sys.argv[2]
     out_dir = sys.argv[3]
     acc_file = pd.read_csv(sys.argv[4])
 
