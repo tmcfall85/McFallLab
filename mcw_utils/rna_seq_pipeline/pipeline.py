@@ -4,7 +4,7 @@ import sys
 
 
 def pipeline(user, out_dir):
-    endedness = "single"
+    endedness = None
     scratch_dir = Path(f"/scratch/g/{user}/{out_dir}/")
     star_version = "2.5.2"
     rsem_version = "1.3.3"
@@ -28,6 +28,7 @@ def pipeline(user, out_dir):
             if len(fastqs) == 2:
                 fastqs_r1 = None
                 fastqs_r2 = None
+                endedness = "paired"
                 for fastq in fastqs:
                     if (
                         fastq.name.lower().find("r1") > -1
@@ -47,6 +48,7 @@ def pipeline(user, out_dir):
                     fastqs_r1 = fastqs[0]
                     fastqs_r2 = fastqs[1]
             elif len(fastqs) == 1:
+                endedness = "single"
                 fastqs_r1 = fastqs[0]
                 fastqs_r2 = "none"
             else:
