@@ -8,6 +8,7 @@
 
 module load star/{star_version}
 module load python/{python_version}
+module load rsem/{rsem_version}
 module list
 python -m venv rnaseq
 source rnaseq/bin/activate
@@ -18,5 +19,7 @@ cd McFallLab
 git checkout {git_branch}
 cd ../
 mkdir -p star_output
+mkdir -p rsem_output
 
-python ./McFallLab/mcw_utils/rna_seq_pipeline/star_align.py --fastqs_R1 {fastqs_r1} --fastqs_R2 {fastqs_r2} --endedness {endedness} --index {star_index} --ncpus {cpus_per_task} --ramGB {ram_gb_per_task}
+python ./McFallLab/mcw_utils/rna_seq_pipeline/star_align.py --fastqs_R1 {fastqs_r1} --fastqs_R2 {fastqs_r2} --endedness {endedness} --index {star_index} --ncpus {cpus_per_task} --ramGB {ram_gb_per_task} --output_dir star_output
+python ./McFallLab/mcw_utils/rna_seq_pipeline/rsem_quant.py --anno_bam star_output/Aligned.toTranscriptome.out.bam --read_strand unstranded --endedness {endedness} --rsem_index {rsem_index} --ncpus {cpus_per_task} --ramGB {ram_gb_per_task}

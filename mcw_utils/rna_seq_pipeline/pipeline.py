@@ -41,12 +41,11 @@ def pipeline(user, out_dir):
                 fastqs_r1 = fastqs[0]
                 fastqs_r2 = "none"
             else:
-                print("Too many or to ofew fastqs found!!")
+                print("Too many or too few fastqs found!!")
                 print(fastqs)
                 raise NameError
-            anno_bam = subfolder / "star_output" / "Aligned.toTranscriptome.out.bam"
             fastqs_r1 = fastqs[0]
-            with open(subfolder / "run_align.slurm", "w") as fp:
+            with open(subfolder / "run.slurm", "w") as fp:
                 fp.write(
                     star_template.f(
                         fname=item.stem.split(".")[0],
@@ -54,6 +53,7 @@ def pipeline(user, out_dir):
                         account=user,
                         star_version=star_version,
                         python_version=python_version,
+                        rsem_version=rsem_version,
                         git_branch=git_branch,
                         fastqs_r1=fastqs_r1,
                         fastqs_r2=fastqs_r2,
@@ -62,13 +62,13 @@ def pipeline(user, out_dir):
                         ram_gb_per_task=ram_gb_per_task,
                     )
                 )
+            """
             with open(subfolder / "run_rsem_quant.slurm", "w") as fp:
                 fp.write(
                     rsem_template.f(
                         fname=item.stem.split(".")[0],
                         cpus_per_task=cpus_per_task,
                         account=user,
-                        rsem_version=rsem_version,
                         python_version=python_version,
                         git_branch=git_branch,
                         anno_bam=anno_bam,
@@ -77,6 +77,7 @@ def pipeline(user, out_dir):
                         ram_gb_per_task=ram_gb_per_task,
                     )
                 )
+            """
 
 
 if __name__ == "__main__":
