@@ -258,8 +258,11 @@ def main(args):
     cwd = Path.cwd()
 
     genome_bam_path = cwd / "Aligned.sortedByCoord.out.bam"
-    genome_bam_path.rename(cwd / args.output_dir / "Aligned.sortedByCoord.out.bam")
+    genome_bam_path_out = cwd / args.output_dir / "Aligned.sortedByCoord.out.bam"
+    genome_bam_path.rename(genome_bam_path_out)
     anno_bam_path = cwd / "Aligned.toTranscriptome.out.bam"
+    anno_bam_path_out = cwd / args.output_dir / "Aligned.toTranscriptome.out.bam"
+    anno_bam_path.rename(anno_bam_path_out)
     star_log_path = cwd / "Log.final.out"
     star_log_path.rename(cwd / args.output_dir / "Log.final.out")
 
@@ -283,8 +286,8 @@ def main(args):
         logger.info("Running %s", rsem_sort_cmd)
         subprocess.call(shlex.split(rsem_sort_cmd))
 
-    get_flagstats(genome_bam_path, genome_flagstat_path)
-    get_flagstats(anno_bam_path, anno_flagstat_path)
+    get_flagstats(genome_bam_path_out, genome_flagstat_path)
+    get_flagstats(anno_bam_path_out, anno_flagstat_path)
     anno_flagstat_content = parse_flagstats(anno_flagstat_path)
     genome_flagstat_content = parse_flagstats(genome_flagstat_path)
     star_log_content = parse_starlog(star_log_path)
