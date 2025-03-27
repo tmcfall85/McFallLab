@@ -17,7 +17,7 @@ import subprocess
 import tarfile
 
 import pandas as pd
-from align import make_modified_TarInfo
+from star_align import make_modified_TarInfo
 from qc_utils import QCMetric, QCMetricRecord
 
 logger = logging.getLogger(__name__)
