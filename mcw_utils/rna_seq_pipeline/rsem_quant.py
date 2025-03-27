@@ -15,6 +15,7 @@ import re
 import shlex
 import subprocess
 import tarfile
+from pathlib import Path
 
 import pandas as pd
 from star_align import make_modified_TarInfo
@@ -114,8 +115,14 @@ def main(args):
     )
     qc_record.add(number_of_genes_QC)
 
-    with open(str(bam_root) + "_number_of_genes_detected.json", "w") as f:
+    cwd = Path.cwd()
+    with open(
+        cwd / args.output_dir / str(bam_root) + "_number_of_genes_detected.json", "w"
+    ) as f:
         json.dump(qc_record.to_ordered_dict(), f)
+
+    genome_bam_path = cwd / gene_quant_fn
+    genome_bam_path.rename(cwd / args.output_dir / gene_quant_fn)
 
 
 def cli():
@@ -129,5 +136,14 @@ def cli():
     parser.add_argument("--rnd_seed", type=int, help="random seed", default=12345)
     parser.add_argument("--ncpus", type=int, help="number of cpus available")
     parser.add_argument("--ramGB", type=int, help="memory available in GB")
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        help="""
+             Root name for output bams. For example out_bam
+             will create out_bam_genome.bam and out_bam_anno.bam
+             """,
+        default="out_bam",
+    )
     args = parser.parse_args()
     main(args)
