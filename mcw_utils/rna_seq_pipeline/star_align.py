@@ -262,7 +262,6 @@ def main(args):
     genome_bam_path.rename(genome_bam_path_out)
     anno_bam_path = cwd / "Aligned.toTranscriptome.out.bam"
     anno_bam_path_out = cwd / args.output_dir / "Aligned.toTranscriptome.out.bam"
-    anno_bam_path.rename(anno_bam_path_out)
     star_log_path = cwd / "Log.final.out"
     star_log_path.rename(cwd / args.output_dir / "Log.final.out")
 
@@ -279,10 +278,10 @@ def main(args):
 
     if rsem_valid:
         logger.info("Transcriptome bam is already rsem-sorted.")
-        anno_bam_path.rename(cwd / args.output_dir / "Aligned.toTranscriptome.out.bam")
+        anno_bam_path.rename(anno_bam_path_out)
     else:
         logger.info("Transcriptome bam is not rsem-sorted.")
-        rsem_sort_cmd = f"convert-sam-for-rsem {anno_bam_path} {cwd / args.output_dir / 'Aligned.sortedByCoord.out.bam'}"
+        rsem_sort_cmd = f"convert-sam-for-rsem {anno_bam_path} {anno_bam_path_out}"
         logger.info("Running %s", rsem_sort_cmd)
         subprocess.call(shlex.split(rsem_sort_cmd))
 
