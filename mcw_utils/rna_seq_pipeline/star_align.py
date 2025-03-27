@@ -314,7 +314,10 @@ if __name__ == "__main__":
         "--index", type=str, help="Path to aligner index tar.gz archive.", required=True
     )
     parser.add_argument(
-        "--indexdir", type=str, help="Directory to extract index to.", default="out"
+        "--indexdir",
+        type=str,
+        help="Directory to extract index to.",
+        default="star_index",
     )
     parser.add_argument(
         "--endedness",

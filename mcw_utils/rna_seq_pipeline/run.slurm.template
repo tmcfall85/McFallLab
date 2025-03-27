@@ -9,6 +9,7 @@
 module load star/{star_version}
 module load python/{python_version}
 module load rsem/{rsem_version}
+module load samtools/{samtools_version}
 module list
 python -m venv rnaseq
 source rnaseq/bin/activate
