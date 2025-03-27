@@ -260,8 +260,8 @@ def main(args):
     genome_bam_path = cwd / "Aligned.sortedByCoord.out.bam"
     genome_bam_path.rename(cwd / args.output_dir / "Aligned.sortedByCoord.out.bam")
     anno_bam_path = cwd / "Aligned.toTranscriptome.out.bam"
-    star_log_path = cwd / "Log.out"
-    star_log_path.rename(cwd / args.output_dir / "Log.out")
+    star_log_path = cwd / "Log.final.out"
+    star_log_path.rename(cwd / args.output_dir / "Log.final.out")
 
     genome_flagstat_path = cwd / args.output_dir / "genome_flagstat.txt"
     anno_flagstat_path = cwd / args.output_dir / "anno_flagstat.txt"
