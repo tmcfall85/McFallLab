@@ -264,10 +264,13 @@ def main(args):
     anno_bam_path_out = cwd / args.output_dir / "Aligned.toTranscriptome.out.bam"
     star_log_path = cwd / "Log.final.out"
     star_log_path_out = cwd / args.output_dir / "Log.final.out"
+    star_log_path_json = cwd / args.output_dir / "Log.final.json"
     star_log_path.rename(star_log_path_out)
 
     genome_flagstat_path = cwd / args.output_dir / "genome_flagstat.txt"
     anno_flagstat_path = cwd / args.output_dir / "anno_flagstat.txt"
+    genome_flagstat_path_json = cwd / args.output_dir / "genome_flagstat.json"
+    anno_flagstat_path_json = cwd / args.output_dir / "anno_flagstat.json"
 
     rsem_check_cmd = f"rsem-sam-validator {anno_bam_path}"
 
@@ -296,15 +299,13 @@ def main(args):
     star_log_qc = QCMetric("star_log_qc", star_log_content)
     write_json(
         anno_flagstat_qc.to_ordered_dict(),
-        re.sub(r"\.txt$", ".json", anno_flagstat_path),
+        anno_flagstat_path_json,
     )
     write_json(
         genome_flagstat_qc.to_ordered_dict(),
-        re.sub(r"\.txt$", ".json", genome_flagstat_path),
+        genome_flagstat_path_json,
     )
-    write_json(
-        star_log_qc.to_ordered_dict(), re.sub(r"\.out$", ".json", star_log_path_out)
-    )
+    write_json(star_log_qc.to_ordered_dict(), star_log_path_json)
 
 
 if __name__ == "__main__":
