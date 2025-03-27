@@ -59,6 +59,7 @@ def pipeline(user, out_dir):
                         fastqs_r2=fastqs_r2,
                         endedness=endedness,
                         star_index=star_index,
+                        rsem_index=rsem_index,
                         ram_gb_per_task=ram_gb_per_task,
                     )
                 )
@@ -73,7 +74,6 @@ def pipeline(user, out_dir):
                         git_branch=git_branch,
                         anno_bam=anno_bam,
                         endedness=endedness,
-                        rsem_index=rsem_index,
                         ram_gb_per_task=ram_gb_per_task,
                     )
                 )
