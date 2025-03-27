@@ -263,7 +263,8 @@ def main(args):
     anno_bam_path = cwd / "Aligned.toTranscriptome.out.bam"
     anno_bam_path_out = cwd / args.output_dir / "Aligned.toTranscriptome.out.bam"
     star_log_path = cwd / "Log.final.out"
-    star_log_path.rename(cwd / args.output_dir / "Log.final.out")
+    star_log_path_out = cwd / args.output_dir / "Log.final.out"
+    star_log_path.rename(star_log_path_out)
 
     genome_flagstat_path = cwd / args.output_dir / "genome_flagstat.txt"
     anno_flagstat_path = cwd / args.output_dir / "anno_flagstat.txt"
@@ -289,7 +290,7 @@ def main(args):
     get_flagstats(anno_bam_path_out, anno_flagstat_path)
     anno_flagstat_content = parse_flagstats(anno_flagstat_path)
     genome_flagstat_content = parse_flagstats(genome_flagstat_path)
-    star_log_content = parse_starlog(star_log_path)
+    star_log_content = parse_starlog(star_log_path_out)
     anno_flagstat_qc = QCMetric("samtools_anno_flagstat", anno_flagstat_content)
     genome_flagstat_qc = QCMetric("samtools_genome_flagstat", genome_flagstat_content)
     star_log_qc = QCMetric("star_log_qc", star_log_content)
@@ -301,7 +302,9 @@ def main(args):
         genome_flagstat_qc.to_ordered_dict(),
         re.sub(r"\.txt$", ".json", genome_flagstat_path),
     )
-    write_json(star_log_qc.to_ordered_dict(), re.sub(r"\.out$", ".json", star_log_path))
+    write_json(
+        star_log_qc.to_ordered_dict(), re.sub(r"\.out$", ".json", star_log_path_out)
+    )
 
 
 if __name__ == "__main__":
