@@ -279,7 +279,7 @@ def main(args):
         anno_bam_path.rename(cwd / args.output_dir / "Aligned.toTranscriptome.out.bam")
     else:
         logger.info("Transcriptome bam is not rsem-sorted.")
-        rsem_sort_cmd = f"convert-sam-for-rsem {anno_bam_path} {cwd / args.output_dir / "Aligned.sortedByCoord.out.bam"}"
+        rsem_sort_cmd = f"convert-sam-for-rsem {anno_bam_path} {cwd / args.output_dir / 'Aligned.sortedByCoord.out.bam'}"
         logger.info("Running %s", rsem_sort_cmd)
         subprocess.call(shlex.split(rsem_sort_cmd))
 
