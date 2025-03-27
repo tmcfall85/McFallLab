@@ -9,7 +9,7 @@ def pipeline(user, out_dir):
     star_version = "2.5.2"
     rsem_version = "1.3.3"
     python_version = "3.9.1"
-    samtools_version = "1.2"
+    samtools_version = "1.15.1"
     git_branch = "issue_1"
     cpus_per_task = 12
     ram_gb_per_task = 30
