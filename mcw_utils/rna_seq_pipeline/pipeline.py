@@ -44,8 +44,8 @@ def pipeline(user, out_dir):
                     print("cannot assign fastqs to r1 and r2!!!")
                     print(fastqs)
                     print("doing it randomly, I guess")
-                    fastqs_r1 = fastq[0]
-                    fastqs_r2 = fastq[1]
+                    fastqs_r1 = fastqs[0]
+                    fastqs_r2 = fastqs[1]
             elif len(fastqs) == 1:
                 fastqs_r1 = fastqs[0]
                 fastqs_r2 = "none"
