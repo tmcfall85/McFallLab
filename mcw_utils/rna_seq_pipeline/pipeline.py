@@ -41,6 +41,7 @@ def pipeline(user, out_dir):
                         or fastq.name.lower().find("rsq1_2") > -1
                         or fastq.name.lower().find("rsq2_2") > -1
                         or fastq.name.lower().find("rsq1_3") > -1
+                        or fastq.name.lower().find("rsq2_3") > -1
                     ):
                         fastqs_r2 = fastq
 
