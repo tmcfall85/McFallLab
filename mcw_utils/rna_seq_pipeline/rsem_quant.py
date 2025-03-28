@@ -105,6 +105,7 @@ def main(args):
     logger.info("Running RSEM command %s", " ".join(rsem_call))
     subprocess.call(rsem_call)
     gene_quant_fn = str(bam_root) + "_rsem.genes.results"
+    isoforms_quant_fn = str(bam_root) + "_rsem.isoforms.results"
     number_of_genes_detected = calculate_number_of_genes_detected(gene_quant_fn)
     number_of_genes_detected_dict = {
         "number_of_genes_detected": number_of_genes_detected
@@ -122,6 +123,8 @@ def main(args):
 
     genome_bam_path = cwd / gene_quant_fn
     genome_bam_path.rename(cwd / args.output_dir / gene_quant_fn)
+    isoforms_bam_path = cwd / isoforms_quant_fn
+    isoforms_bam_path.rename(cwd / args.output_dir / isoforms_quant_fn)
 
 
 if __name__ == "__main__":
