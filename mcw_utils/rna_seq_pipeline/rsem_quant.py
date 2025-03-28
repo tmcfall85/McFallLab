@@ -125,7 +125,7 @@ def main(args):
     genome_bam_path.rename(cwd / args.output_dir / gene_quant_fn)
 
 
-def cli():
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--rsem_index", type=str, help="RSEM index gzipped tar")
     parser.add_argument("--anno_bam", type=str, help="STAR alignment to annotation.")
