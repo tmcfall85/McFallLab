@@ -116,9 +116,8 @@ def main(args):
     qc_record.add(number_of_genes_QC)
 
     cwd = Path.cwd()
-    with open(
-        cwd / args.output_dir / str(bam_root) + "_number_of_genes_detected.json", "w"
-    ) as f:
+    fname = f"{bam_root}_number_of_genes_detected.json"
+    with open(cwd / args.output_dir / fname, "w") as f:
         json.dump(qc_record.to_ordered_dict(), f)
 
     genome_bam_path = cwd / gene_quant_fn
