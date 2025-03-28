@@ -59,7 +59,6 @@ def pipeline(user, out_dir):
                 print("Too many or too few fastqs found!!")
                 print(fastqs)
                 raise NameError
-            fastqs_r1 = fastqs[0]
             with open(subfolder / "run.slurm", "w") as fp:
                 fp.write(
                     slurm_template.f(
