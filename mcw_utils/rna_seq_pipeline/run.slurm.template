@@ -18,6 +18,7 @@ rm -rf McFallLab/
 git clone https://github.com/tmcfall85/McFallLab.git
 cd McFallLab 
 git checkout {git_branch}
+git rev-parse HEAD
 cd ../
 mkdir -p star_output
 
