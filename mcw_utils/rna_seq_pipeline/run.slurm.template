@@ -20,9 +20,11 @@ cd McFallLab
 git checkout {git_branch}
 git rev-parse HEAD
 cd ../
+rm -rf star_output
 mkdir -p star_output
 
 python ./McFallLab/mcw_utils/rna_seq_pipeline/star_align.py --fastqs_R1 {fastqs_r1} --fastqs_R2 {fastqs_r2} --endedness {endedness} --index {star_index} --ncpus {cpus_per_task} --ramGB {ram_gb_per_task} --output_dir star_output
 
+rm -rf rsem_output
 mkdir -p rsem_output
 python ./McFallLab/mcw_utils/rna_seq_pipeline/rsem_quant.py --anno_bam star_output/Aligned.toTranscriptome.out.bam --read_strand unstranded --endedness {endedness} --rsem_index {rsem_index} --ncpus {cpus_per_task} --ramGB {ram_gb_per_task} --output_dir rsem_output
