@@ -1,4 +1,5 @@
 from pathlib import Path
+from shutil import copy2
 import sys
 
 
@@ -42,10 +43,10 @@ def main(user: str, subfolder: str, outdir: Path, copy_bam=bool):
                             and file.name.startswith(tempus_folder.stem)
                         ):
                             print(f"Copying rna seq pipeline log: {file}")
-                            file.rename(outdir / "mwc_utils_rna_seq_pipeline.log")
+                            copy2(file, outdir / "mwc_utils_rna_seq_pipeline.log")
                         elif file.is_file() and file.name == "run.slurm":
                             print(f"Copying run.slurm: {file}")
-                            file.rename(outdir / "run.slurm")
+                            copy2(file, outdir / "run.slurm")
                     star_output = tempus_folder / "star_output"
                     star_output_dest = out_tempus / "star_output"
                     if star_output.is_dir():
@@ -55,12 +56,12 @@ def main(user: str, subfolder: str, outdir: Path, copy_bam=bool):
                             if file.stem == ".bam":
                                 if copy_bam:
                                     print(file)
-                                    file.rename(star_output / file.name)
+                                    copy2(file, star_output / file.name)
                                 else:
                                     print(f"skipping bam file b/c its too swol {file}")
                             else:
                                 print(file)
-                                file.rename(star_output / file.name)
+                                copy2(file, star_output / file.name)
                     else:
                         print("MISSING STAR OUTPUT! RUH ROH RAGGY")
                     rsem_output = tempus_folder / "rsem_output"
@@ -70,7 +71,7 @@ def main(user: str, subfolder: str, outdir: Path, copy_bam=bool):
                         print("Copying rsem output files:")
                         for file in rsem_output.iterdir():
                             print(file)
-                            file.rename(rsem_output / file.name)
+                            copy2(file, rsem_output / file.name)
                     else:
                         print("MISSING RSEM OUTPUT! RUH ROH RAGGY")
 
