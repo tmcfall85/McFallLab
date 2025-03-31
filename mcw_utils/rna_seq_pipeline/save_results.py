@@ -43,10 +43,10 @@ def main(user: str, subfolder: str, outdir: Path, copy_bam=bool):
                             and file.name.startswith(tempus_folder.stem)
                         ):
                             print(f"Copying rna seq pipeline log: {file}")
-                            copy2(file, outdir / "mwc_utils_rna_seq_pipeline.log")
+                            copy2(file, out_tempus / "mwc_utils_rna_seq_pipeline.log")
                         elif file.is_file() and file.name == "run.slurm":
                             print(f"Copying run.slurm: {file}")
-                            copy2(file, outdir / "run.slurm")
+                            copy2(file, out_tempus / "run.slurm")
                     star_output = tempus_folder / "star_output"
                     star_output_dest = out_tempus / "star_output"
                     if star_output.is_dir():
