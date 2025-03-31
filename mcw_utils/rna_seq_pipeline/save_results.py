@@ -56,12 +56,12 @@ def main(user: str, subfolder: str, outdir: Path, copy_bam=bool):
                             if file.stem == ".bam":
                                 if copy_bam:
                                     print(file)
-                                    copy2(file, star_output / file.name)
+                                    copy2(file, star_output_dest / file.name)
                                 else:
                                     print(f"skipping bam file b/c its too swol {file}")
                             else:
                                 print(file)
-                                copy2(file, star_output / file.name)
+                                copy2(file, star_output_dest / file.name)
                     else:
                         print("MISSING STAR OUTPUT! RUH ROH RAGGY")
                     rsem_output = tempus_folder / "rsem_output"
@@ -71,7 +71,7 @@ def main(user: str, subfolder: str, outdir: Path, copy_bam=bool):
                         print("Copying rsem output files:")
                         for file in rsem_output.iterdir():
                             print(file)
-                            copy2(file, rsem_output / file.name)
+                            copy2(file, rsem_output_dest / file.name)
                     else:
                         print("MISSING RSEM OUTPUT! RUH ROH RAGGY")
 
