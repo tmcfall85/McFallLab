@@ -53,7 +53,7 @@ def main(user: str, subfolder: str, outdir: Path, copy_bam=bool):
                         star_output_dest.mkdir()
                         print("Copying STAR output files:")
                         for file in star_output.iterdir():
-                            if file.stem == ".bam":
+                            if file.suffix == ".bam":
                                 if copy_bam:
                                     print(file)
                                     copy2(file, star_output_dest / file.name)
