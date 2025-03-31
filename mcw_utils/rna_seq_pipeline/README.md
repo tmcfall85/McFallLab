@@ -31,6 +31,16 @@ Navigate over to the scratch subfolder and do:
 
 Scratch isn't long term storage, so we need to copy the resultant files back:
 
-`python save_results.py dseo tempus_rna_seq`
+`python save_results.py dseo tempus_rna_seq /home/msochor/tempus_rna_seq`
+
+optionally you can save bam files too, but it'll be pretty easy to overrun your default GB limit on RCC if you do... so... think before you act.  We have bam files for everything already from tempus, but obviously thats their run of STAR alignment...
+
+`python save_results.py dseo tempus_rna_seq /home/msochor/tempus_rna_seq --save-bam`
+
 
 Then cleanup the dir we made in scratch.  NOTE: MAKE SURE YOU HAVE EVERYTHING YOU WANT SAVED BEFORE YOU DO THIS OR YOU GOTS TO RUN LOTS OF THINGS AGAIN AND THIS TAKES 
+
+```
+cd /scratch/g/dseo
+rm -rf tempus_rna_seq
+```
