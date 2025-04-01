@@ -22,6 +22,7 @@ from abc import ABC, abstractmethod
 
 from qc_utils import QCMetric
 from qc_utils.parsers import parse_flagstats, parse_starlog
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -249,54 +250,62 @@ def main(args):
     if merged_R2 and args.endedness == "paired":
         fastqs.append(merged_R2)
     with tarfile.open(args.index, "r:gz") as archive:
-        archive.extractall()
+        archive.extractall(".", members=make_modified_TarInfo(archive, args.indexdir))
     aligner = make_aligner(
         args.endedness, fastqs, args.ncpus, args.ramGB, args.indexdir
     )
     aligner.run()
-    cwd = os.getcwd()
-    genome_bam_path = os.path.join(cwd, args.bamroot + "_genome.bam")
-    anno_bam_path = os.path.join(cwd, args.bamroot + "_anno.bam")
-    genome_flagstat_path = os.path.join(cwd, args.bamroot + "_genome_flagstat.txt")
-    anno_flagstat_path = os.path.join(cwd, args.bamroot + "_anno_flagstat.txt")
-    star_log_path = os.path.join(cwd, args.bamroot + "_Log.final.out")
-    os.rename(os.path.join(cwd, "Aligned.sortedByCoord.out.bam"), genome_bam_path)
-    os.rename(os.path.join(cwd, "Log.final.out"), star_log_path)
-    rsem_check_cmd = "rsem-sam-validator {bam_to_check}".format(
-        bam_to_check="Aligned.toTranscriptome.out.bam"
-    )
+    cwd = Path.cwd()
+
+    genome_bam_path = cwd / "Aligned.sortedByCoord.out.bam"
+    genome_bam_path_out = cwd / args.output_dir / "Aligned.sortedByCoord.out.bam"
+    genome_bam_path.rename(genome_bam_path_out)
+    anno_bam_path = cwd / "Aligned.toTranscriptome.out.bam"
+    anno_bam_path_out = cwd / args.output_dir / "Aligned.toTranscriptome.out.bam"
+    star_log_path = cwd / "Log.final.out"
+    star_log_path_out = cwd / args.output_dir / "Log.final.out"
+    star_log_path_json = cwd / args.output_dir / "Log.final.json"
+    star_log_path.rename(star_log_path_out)
+
+    genome_flagstat_path = cwd / args.output_dir / "genome_flagstat.txt"
+    anno_flagstat_path = cwd / args.output_dir / "anno_flagstat.txt"
+    genome_flagstat_path_json = cwd / args.output_dir / "genome_flagstat.json"
+    anno_flagstat_path_json = cwd / args.output_dir / "anno_flagstat.json"
+
+    rsem_check_cmd = f"rsem-sam-validator {anno_bam_path}"
+
     rsem_output = subprocess.check_output(shlex.split(rsem_check_cmd))
     # rsem validator exits with 0 whether the check passes or not
     # for this reason we check if the output ends in 'is valid!'
     # the other possibility is 'is not valid!'
     rsem_valid = rsem_output.decode().strip().split("\n")[-1].endswith("is valid!")
+
     if rsem_valid:
         logger.info("Transcriptome bam is already rsem-sorted.")
-        os.rename(os.path.join(cwd, "Aligned.toTranscriptome.out.bam"), anno_bam_path)
+        anno_bam_path.rename(anno_bam_path_out)
     else:
         logger.info("Transcriptome bam is not rsem-sorted.")
-        rsem_sort_cmd = "convert-sam-for-rsem {input} {output}".format(
-            input="Aligned.toTranscriptome.out.bam", output=args.bamroot + "_anno"
-        )
+        rsem_sort_cmd = f"convert-sam-for-rsem {anno_bam_path} {anno_bam_path_out}"
         logger.info("Running %s", rsem_sort_cmd)
         subprocess.call(shlex.split(rsem_sort_cmd))
-    get_flagstats(genome_bam_path, genome_flagstat_path)
-    get_flagstats(anno_bam_path, anno_flagstat_path)
+
+    get_flagstats(genome_bam_path_out, genome_flagstat_path)
+    get_flagstats(anno_bam_path_out, anno_flagstat_path)
     anno_flagstat_content = parse_flagstats(anno_flagstat_path)
     genome_flagstat_content = parse_flagstats(genome_flagstat_path)
-    star_log_content = parse_starlog(star_log_path)
+    star_log_content = parse_starlog(star_log_path_out)
     anno_flagstat_qc = QCMetric("samtools_anno_flagstat", anno_flagstat_content)
     genome_flagstat_qc = QCMetric("samtools_genome_flagstat", genome_flagstat_content)
     star_log_qc = QCMetric("star_log_qc", star_log_content)
     write_json(
         anno_flagstat_qc.to_ordered_dict(),
-        re.sub(r"\.txt$", ".json", anno_flagstat_path),
+        anno_flagstat_path_json,
     )
     write_json(
         genome_flagstat_qc.to_ordered_dict(),
-        re.sub(r"\.txt$", ".json", genome_flagstat_path),
+        genome_flagstat_path_json,
     )
-    write_json(star_log_qc.to_ordered_dict(), re.sub(r"\.out$", ".json", star_log_path))
+    write_json(star_log_qc.to_ordered_dict(), star_log_path_json)
 
 
 if __name__ == "__main__":
@@ -311,7 +320,10 @@ if __name__ == "__main__":
         "--index", type=str, help="Path to aligner index tar.gz archive.", required=True
     )
     parser.add_argument(
-        "--indexdir", type=str, help="Directory to extract index to.", default="out"
+        "--indexdir",
+        type=str,
+        help="Directory to extract index to.",
+        default="star_index",
     )
     parser.add_argument(
         "--endedness",
@@ -321,7 +333,7 @@ if __name__ == "__main__":
         required=True,
     )
     parser.add_argument(
-        "--bamroot",
+        "--output_dir",
         type=str,
         help="""
              Root name for output bams. For example out_bam

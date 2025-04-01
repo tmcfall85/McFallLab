@@ -15,9 +15,10 @@ import re
 import shlex
 import subprocess
 import tarfile
+from pathlib import Path
 
 import pandas as pd
-from align import make_modified_TarInfo
+from star_align import make_modified_TarInfo
 from qc_utils import QCMetric, QCMetricRecord
 
 logger = logging.getLogger(__name__)
@@ -104,6 +105,7 @@ def main(args):
     logger.info("Running RSEM command %s", " ".join(rsem_call))
     subprocess.call(rsem_call)
     gene_quant_fn = str(bam_root) + "_rsem.genes.results"
+    isoforms_quant_fn = str(bam_root) + "_rsem.isoforms.results"
     number_of_genes_detected = calculate_number_of_genes_detected(gene_quant_fn)
     number_of_genes_detected_dict = {
         "number_of_genes_detected": number_of_genes_detected
@@ -114,8 +116,15 @@ def main(args):
     )
     qc_record.add(number_of_genes_QC)
 
-    with open(str(bam_root) + "_number_of_genes_detected.json", "w") as f:
+    cwd = Path.cwd()
+    fname = f"{bam_root}_number_of_genes_detected.json"
+    with open(cwd / args.output_dir / fname, "w") as f:
         json.dump(qc_record.to_ordered_dict(), f)
+
+    genome_bam_path = cwd / gene_quant_fn
+    genome_bam_path.rename(cwd / args.output_dir / gene_quant_fn)
+    isoforms_bam_path = cwd / isoforms_quant_fn
+    isoforms_bam_path.rename(cwd / args.output_dir / isoforms_quant_fn)
 
 
 if __name__ == "__main__":
@@ -129,5 +138,14 @@ if __name__ == "__main__":
     parser.add_argument("--rnd_seed", type=int, help="random seed", default=12345)
     parser.add_argument("--ncpus", type=int, help="number of cpus available")
     parser.add_argument("--ramGB", type=int, help="memory available in GB")
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        help="""
+             Root name for output bams. For example out_bam
+             will create out_bam_genome.bam and out_bam_anno.bam
+             """,
+        default="out_bam",
+    )
     args = parser.parse_args()
     main(args)

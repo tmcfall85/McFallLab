@@ -16,3 +16,7 @@ authors = [
 license = { text = "MIT" }
 readme = "README.md"
 dependencies = []
+
+[project.scripts]
+mcw_utils_star_align = "mcw_utils.rna_seq_pipeline.star_align:cli"
+mwc_utils_rsem_quant = "mcw_utils.rna_seq_pipeline.rsem_quant:cli"
