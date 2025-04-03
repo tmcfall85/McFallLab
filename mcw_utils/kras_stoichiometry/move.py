@@ -60,6 +60,9 @@ def move_rcc_files_to_scratch(
     group_dir: PosixPath,
     scratch_dir: PosixPath,
 ):
+    if scratch_dir.is_dir() == False:
+        scratch_dir.mkdir()
+
     acc_numbers_exists = []
     rna_folders_exists = []
     bam_files_exists = []
