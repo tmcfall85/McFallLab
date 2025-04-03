@@ -24,6 +24,7 @@ def move_rcc_file_to_scratch(
                     bam_file_exists = True
                     dest_name = f"{accession_number}_alig.bam"
                     dest_file = scratch_dir / dest_name
+                    print(f"copying {item} to {dest_file}")
                     shutil.copy(str(item), str(dest_file))
             else:
                 bam_file_exists = False
@@ -41,6 +42,7 @@ def move_rcc_file_to_scratch(
                     rsem_file_exists = True
                     dest_name = f"{accession_number}_rsem.results"
                     dest_file = scratch_dir / dest_name
+                    print(f"copying {item} to {dest_file}")
                     shutil.copy(str(item), str(dest_file))
             else:
                 rsem_file_exists = False
