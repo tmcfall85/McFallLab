@@ -9,7 +9,7 @@ def move_rcc_file_to_scratch(
     accession_number: str, group_dir: PosixPath, scratch_dir: PosixPath
 ):
 
-    acc_folder = group_dir / accession_number
+    acc_folder = group_dir
     if acc_folder.is_dir():
         acc_number_exists = True
         acc_star_folder = acc_folder / "star_output"
@@ -81,7 +81,7 @@ def move_rcc_files_to_scratch(
                 rna_folders_exists.append(rna_folder_exists)
                 bam_files_exists.append(bam_file_exists)
                 rsem_files_exisxts.append(rsem_file_exists)
-                tempus_dirs.append(tempus_dir / accession_number)
+                tempus_dirs.append(tempus_dir)
 
     move_report = pd.DataFrame(
         {
