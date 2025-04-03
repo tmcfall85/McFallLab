@@ -12,4 +12,4 @@ module list
 
 source stoichiometryEnv/bin/activate
 
-python measure.py /scratch/g/mcfall/measure_tempus
+python measure.py /scratch/g/tmcfall/measure_tempus
