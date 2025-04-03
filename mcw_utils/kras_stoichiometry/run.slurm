@@ -10,6 +10,10 @@ module load python/3.9.1
 module load samtools/1.15.1
 module list
 
+python -m venv stoichiometryEnv
 source stoichiometryEnv/bin/activate
+
+pip install pysam
+pip install pandas
 
 python measure.py /scratch/g/tmcfall/measure_tempus
