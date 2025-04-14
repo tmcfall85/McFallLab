@@ -89,7 +89,7 @@ def calculate_number_of_genes_detected(quant_tsv, threshold_of_detection=1):
 
 def main(args):
     remove_bam_from_end_re = re.compile("\.bam$")
-    bam_root = remove_bam_from_end_re.sub("", os.path.basename(args.upstream))
+    bam_root = os.path.basename(args.upstream).split("_T_")[0]
     with tarfile.open(args.rsem_index, "r:gz") as archive:
         archive.extractall(".", members=make_modified_TarInfo(archive, "rsem_index"))
     rsem_call = shlex.split(
