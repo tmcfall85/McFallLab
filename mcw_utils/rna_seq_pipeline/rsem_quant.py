@@ -33,7 +33,7 @@ consolehandler.setFormatter(formatter)
 logger.addHandler(consolehandler)
 logger.addHandler(filehandler)
 
-RSEM_COMMAND = """rsem-calculate-expression --bam \
+RSEM_COMMAND = """rsem-calculate-expression \
 --estimate-rspd \
 --calc-ci \
 --seed {rnd_seed} \
@@ -42,7 +42,8 @@ RSEM_COMMAND = """rsem-calculate-expression --bam \
 --ci-memory {ramGB}000 \
 --forward-prob {fwd_prob} \
 {paired_end} \
-{anno_bam} \
+{upstream} \
+{downstream} \
 rsem_index/rsem \
 {bam_root}_rsem"""
 
@@ -88,7 +89,7 @@ def calculate_number_of_genes_detected(quant_tsv, threshold_of_detection=1):
 
 def main(args):
     remove_bam_from_end_re = re.compile("\.bam$")
-    bam_root = remove_bam_from_end_re.sub("", os.path.basename(args.anno_bam))
+    bam_root = remove_bam_from_end_re.sub("", os.path.basename(args.upstream))
     with tarfile.open(args.rsem_index, "r:gz") as archive:
         archive.extractall(".", members=make_modified_TarInfo(archive, "rsem_index"))
     rsem_call = shlex.split(
@@ -98,7 +99,8 @@ def main(args):
             ramGB=args.ramGB,
             fwd_prob=strand_to_fwd_prob(args.read_strand),
             paired_end=format_endedness(args.endedness),
-            anno_bam=args.anno_bam,
+            upstream=args.upstream,
+            downstream=args.downstream,
             bam_root=bam_root,
         )
     )
@@ -130,7 +132,8 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--rsem_index", type=str, help="RSEM index gzipped tar")
-    parser.add_argument("--anno_bam", type=str, help="STAR alignment to annotation.")
+    parser.add_argument("--upstream", type=str, help="STAR alignment to annotation.")
+    parser.add_argument("--downstream", type=str, help="STAR alignment to annotation.")
     parser.add_argument("--endedness", type=str, choices=["paired", "single"])
     parser.add_argument(
         "--read_strand", type=str, choices=["forward", "reverse", "unstranded"]
