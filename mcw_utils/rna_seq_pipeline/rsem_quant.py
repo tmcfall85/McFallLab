@@ -38,9 +38,9 @@ RSEM_COMMAND = """rsem-calculate-expression \
 --calc-ci \
 --seed {rnd_seed} \
 -p {ncpus} \
---no-bam-output \
 --ci-memory {ramGB}000 \
 --forward-prob {fwd_prob} \
+--bowtie2 \
 {paired_end} \
 {upstream} \
 {downstream} \
