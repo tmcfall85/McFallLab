@@ -96,6 +96,10 @@ def main(folder_path):
                                 else:
                                     data[col_name].append(0)
 
+    df = pd.DataFrame(data)
+    df.to_csv("gene_expression_results.csv", index=False)
+    print("Gene expression results saved to gene_expression_results.csv")
+
 
 if __name__ == "__main__":
     import argparse
