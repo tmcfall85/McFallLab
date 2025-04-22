@@ -64,7 +64,7 @@ def main(folder_path):
         col_name = f"{gene}_TPM"
         data[col_name] = []
     search_dir = Path(folder_path)
-    rsem_name = "Aligned.toTranscriptome.out_number_of_genes_detected.json"
+    rsem_name = "Aligned.toTranscriptome.out_rsem.genes.results"
     for acc_dir in search_dir.iterdir():
         if acc_dir.is_dir():
             acc_num = acc_dir.stem
