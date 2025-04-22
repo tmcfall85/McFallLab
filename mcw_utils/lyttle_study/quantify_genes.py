@@ -72,9 +72,11 @@ def main(folder_path):
                 if sub_folder.is_dir() and sub_folder.name == "rsem_output":
                     for fname in sub_folder.iterdir():
                         if fname.is_file() and fname.name == rsem_name:
+                            print("File to be processed:", fname)
 
                             dfi = pd.read_csv(fname, sep="\t")
                             data["accession_id"].append(acc_num)
+                            print(dfi.iloc[0])
 
                             for gene in up.keys():
                                 gene_results = dfi[dfi.gene_id.str.startswith(up[gene])]
