@@ -76,7 +76,6 @@ def main(folder_path):
 
                             dfi = pd.read_csv(fname, sep="\t")
                             data["accession_id"].append(acc_num)
-                            print(dfi.iloc[0])
 
                             for gene in up.keys():
                                 gene_results = dfi[dfi.gene_id.str.startswith(up[gene])]
