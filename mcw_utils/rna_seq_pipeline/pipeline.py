@@ -34,14 +34,17 @@ def pipeline(user, out_dir):
                         fastq.name.lower().find("r1") > -1
                         or fastq.name.lower().find("rsq1_1") > -1
                         or fastq.name.lower().find("rsq2_1") > -1
+                        or fastq.name.lower().find("rsq3_1") > -1
                     ):
                         fastqs_r1 = fastq
                     elif (
                         fastq.name.lower().find("r2") > -1
                         or fastq.name.lower().find("rsq1_2") > -1
                         or fastq.name.lower().find("rsq2_2") > -1
+                        or fastq.name.lower().find("rsq3_2") > -1
                         or fastq.name.lower().find("rsq1_3") > -1
                         or fastq.name.lower().find("rsq2_3") > -1
+                        or fastq.name.lower().find("rsq3_3") > -1
                     ):
                         fastqs_r2 = fastq
 
