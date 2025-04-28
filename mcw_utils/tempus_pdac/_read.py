@@ -58,67 +58,77 @@ def _read_tempus_files_in_directory(directory_path):
                                 )
                             ).hexdigest()
                         )
-                        
+
                         schema_version.append(data["metadata"]["schemaVersion"])
                         acc_num.append(file_path.parts[-1])
                         accession_id.append(data["order"]["accessionId"])
                         report_type.append(data["report"]["workflow"]["reportType"])
-                        
+
                         has_kras_variant = False
                         if report_type[-1] == "DNA":
                             if data["metadata"]["schemaVersion"] in ["1.3.1", "1.3.2"]:
                                 msi.append(data["results"]["msiStatus"] == "stable")
                             else:
-                                msi.append(data["results"]["microsatelliteInstability"]["status"])
+                                msi.append(
+                                    data["results"]["microsatelliteInstability"][
+                                        "status"
+                                    ]
+                                )
 
                             mut_variants = []
+                            mut_kras_variants = []
                             muts = data["results"][
                                 "somaticPotentiallyActionableMutations"
                             ]
                             for mut in muts:
                                 if mut["gene"] == "KRAS":
-                                    mut_kras_variants = []
                                     for variant in mut["variants"]:
                                         mut_kras_variants.append(
                                             variant["mutationEffect"]
                                         )
                                     has_kras_variant = True
-                                    kras_variants.append("|".join(mut_kras_variants))
 
                                 for variant in mut["variants"]:
                                     mut_variants.append(
                                         f'{mut["gene"]}:{variant["mutationEffect"]}:somatic:potentially_actionable'
                                     )
-                            
+
                             muts = data["results"][
                                 "somaticBiologicallyRelevantVariants"
                             ]
-                            
+
                             for mut in muts:
+                                if mut["gene"] == "KRAS":
+                                    mut_kras_variants.append(variant["mutationEffect"])
+                                    has_kras_variant = True
                                 mut_variants.append(
                                     f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:biologically_relevant'
                                 )
 
                             muts = data["results"][
                                 "somaticVariantsOfUnknownSignificance"
-                            ] 
+                            ]
                             for mut in muts:
+                                if mut["gene"] == "KRAS":
+                                    mut_kras_variants.append(variant["mutationEffect"])
+                                    has_kras_variant = True
                                 mut_variants.append(
                                     f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:unknown_significance'
                                 )
-                            
-                            muts = data["results"][
-                                "fusionVariants"
-                            ] 
+
+                            muts = data["results"]["fusionVariants"]
                             for mut in muts:
                                 mut_variants.append(
                                     f'gene5={mut["gene5"]}-gene3={mut["gene3"]}:{mut["variantDescription"]}:fusion:unknown_significance'
                                 )
 
-                            muts = data["results"][
-                                "inheritedRelevantVariants"
-                            ]["values"]
+                            muts = data["results"]["inheritedRelevantVariants"][
+                                "values"
+                            ]
                             for mut in muts:
+                                if mut["gene"] == "KRAS":
+                                    mut_kras_variants.append(variant["mutationEffect"])
+                                    has_kras_variant = True
                                 mut_variants.append(
                                     f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:biologically_relevant'
                                 )
@@ -127,6 +137,9 @@ def _read_tempus_files_in_directory(directory_path):
                                 "inheritedVariantsOfUnknownSignificance"
                             ]["values"]
                             for mut in muts:
+                                if mut["gene"] == "KRAS":
+                                    mut_kras_variants.append(variant["mutationEffect"])
+                                    has_kras_variant = True
                                 mut_variants.append(
                                     f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:unknown_significance'
                                 )
@@ -134,7 +147,8 @@ def _read_tempus_files_in_directory(directory_path):
                             if len(mut_variants) == 0:
                                 mut_variants.append("none:none:none:none")
                             variants.append("|".join(mut_variants))
-                            
+                            kras_variants.append("|".join(mut_kras_variants))
+
                         else:
                             msi.append(None)
                             variants.append("")
