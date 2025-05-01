@@ -28,6 +28,15 @@ def main(folder_path):
     IL17A = "ENSG00000112115"
     IL1B = "ENSG00000125538"
 
+    # housekeeping
+    ACTB = "ENSG00000075624"
+    GAPDH = "ENSG00000111640"
+    RPLP0 = "ENSG00000089157"
+    PGK1 = "ENSG00000102144"
+    PPIA = "ENSG00000196262"
+    RPL13A = "ENSG00000142541"
+    RLA0 = "ENSG00000089157"
+
     up = {
         "TPO": TPO,
         "MMP1": MMP1,
@@ -53,6 +62,16 @@ def main(folder_path):
         "IL23A": IL23A,
         "IL1LA": IL17A,
         "IL1B": IL1B,
+    }
+
+    housekeeping = {
+        "ACTB": ACTB,
+        "GAPDH": GAPDH,
+        "RPLP0": RPLP0,
+        "PGK1": PGK1,
+        "PPIA": PPIA,
+        "RPL13A": RPL13A,
+        "RLA0": RLA0,
     }
 
     data = {}
@@ -89,6 +108,17 @@ def main(folder_path):
                             for gene in down.keys():
                                 gene_results = dfi[
                                     dfi.gene_id.str.startswith(down[gene])
+                                ]
+                                col_name = f"{gene}_TPM"
+                                if len(gene_results) > 0:
+
+                                    data[col_name].append(gene_results.iloc[0].TPM)
+                                else:
+                                    data[col_name].append(0)
+
+                            for gene in housekeeping.keys():
+                                gene_results = dfi[
+                                    dfi.gene_id.str.startswith(housekeeping[gene])
                                 ]
                                 col_name = f"{gene}_TPM"
                                 if len(gene_results) > 0:
