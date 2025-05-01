@@ -82,6 +82,9 @@ def main(folder_path):
     for gene in down.keys():
         col_name = f"{gene}_TPM"
         data[col_name] = []
+    for gene in housekeeping.keys():
+        col_name = f"{gene}_TPM"
+        data[col_name] = []
     search_dir = Path(folder_path)
     rsem_name = "Aligned.toTranscriptome.out_rsem.genes.results"
     for acc_dir in search_dir.iterdir():
