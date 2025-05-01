@@ -16,7 +16,7 @@ From this directory:
 
 update as needed
 
-`python move.py /scratch/g/dseo/tempus_rna_seq /scratch/g/tmcfall/rna_seq_temp ~/RNA_rcc_bam_with_pdac_sotb_mrn.csv`
+`python move.py /scratch/g/dseo/tempus_rna_seq /scratch/g/tmcfall/measure_tempus ~/RNA_rcc_bam_with_pdac_sotb_mrn.csv`
 
 # Run files after they have been moved
 
