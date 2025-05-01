@@ -97,11 +97,10 @@ def move_rcc_files_to_scratch(
 
 
 if __name__ == "__main__":
-    user = sys.argv[1]
-    in_dir = sys.argv[2]
-    out_dir = sys.argv[3]
+    in_dir = sys.argv[1]
+    out_dir = sys.argv[2]
 
     move_rcc_files_to_scratch(
-        Path(f"/group/{user}/{in_dir}"),
-        Path(f"/scratch/g/{user}/{out_dir}/"),
+        Path(in_dir),
+        Path(out_dir),
     )
