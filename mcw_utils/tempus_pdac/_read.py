@@ -99,7 +99,7 @@ def _read_tempus_files_in_directory(directory_path):
 
                             for mut in muts:
                                 if mut["gene"] == "KRAS":
-                                    mut_kras_variants.append(variant["mutationEffect"])
+                                    mut_kras_variants.append(mut["mutationEffect"])
                                     has_kras_variant = True
                                 mut_variants.append(
                                     f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:biologically_relevant'
@@ -110,7 +110,7 @@ def _read_tempus_files_in_directory(directory_path):
                             ]
                             for mut in muts:
                                 if mut["gene"] == "KRAS":
-                                    mut_kras_variants.append(variant["mutationEffect"])
+                                    mut_kras_variants.append(mut["mutationEffect"])
                                     has_kras_variant = True
                                 mut_variants.append(
                                     f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:unknown_significance'
@@ -127,7 +127,7 @@ def _read_tempus_files_in_directory(directory_path):
                             ]
                             for mut in muts:
                                 if mut["gene"] == "KRAS":
-                                    mut_kras_variants.append(variant["mutationEffect"])
+                                    mut_kras_variants.append(mut["mutationEffect"])
                                     has_kras_variant = True
                                 mut_variants.append(
                                     f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:biologically_relevant'
@@ -138,7 +138,7 @@ def _read_tempus_files_in_directory(directory_path):
                             ]["values"]
                             for mut in muts:
                                 if mut["gene"] == "KRAS":
-                                    mut_kras_variants.append(variant["mutationEffect"])
+                                    mut_kras_variants.append(mut["mutationEffect"])
                                     has_kras_variant = True
                                 mut_variants.append(
                                     f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:unknown_significance'
@@ -147,7 +147,6 @@ def _read_tempus_files_in_directory(directory_path):
                             if len(mut_variants) == 0:
                                 mut_variants.append("none:none:none:none")
                             variants.append("|".join(mut_variants))
-                            kras_variants.append("|".join(mut_kras_variants))
 
                         else:
                             msi.append(None)
@@ -155,6 +154,8 @@ def _read_tempus_files_in_directory(directory_path):
 
                         if has_kras_variant == False:
                             kras_variants.append("")
+                        else:
+                            kras_variants.append("|".join(mut_kras_variants))
 
                         report_id.append(data["report"]["reportId"])
                         bio_inf_pipeline_version.append(
