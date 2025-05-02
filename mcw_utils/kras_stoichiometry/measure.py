@@ -181,13 +181,21 @@ class RNAseqRas:
                     ):
                         if ap[0] is not None:
                             if read.is_forward:
-                                codon.append(
-                                    get_reverse(str(read.get_forward_sequence()))[ap[0]]
-                                )
+                                try:
+                                    codon.append(
+                                        get_reverse(str(read.get_forward_sequence()))[
+                                            ap[0]
+                                        ]
+                                    )
+                                except IndexError:
+                                    codon.append("?")
                             else:
-                                codon.append(
-                                    str(read.get_forward_sequence())[::-1][ap[0]]
-                                )
+                                try:
+                                    codon.append(
+                                        str(read.get_forward_sequence())[::-1][ap[0]]
+                                    )
+                                except IndexError:
+                                    codon.append("?")
                         else:
                             codon.append("?")
 
