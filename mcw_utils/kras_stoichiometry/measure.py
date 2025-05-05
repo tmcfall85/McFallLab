@@ -54,6 +54,18 @@ class RNAseqRas:
         kras_df = df[df.gene_id.str.startswith(kras)]
         return kras_df
 
+    def _read_hras_from_rsem(self, fname):
+        df = pd.read_csv(fname, sep="\t")
+        hras = "ENSG00000276536"
+        hras_df = df[df.gene_id.str.startswith(hras)]
+        return hras_df
+
+    def _read_nras_from_rsem(self, fname):
+        df = pd.read_csv(fname, sep="\t")
+        nras = "ENSG00000213281"
+        nras_df = df[df.gene_id.str.startswith(nras)]
+        return nras_df
+
     def measure(self):
         merged_data = pd.read_csv(self.bam_dir / "tempus_json_pdac_rcc_merged.csv")
         for fname in self.bam_fnames:
@@ -94,7 +106,30 @@ class RNAseqRas:
         kras_df = pd.concat(kras_dfs)
         kras_df["accession_number"] = accession_numbers
 
-        self.output_counts = star_df.merge(kras_df, on="accession_number")
+        hras_dfs = []
+        accession_numbers = []
+        for fname in self.rsem_fnames:
+            accession_numbers.append(fname.name.split("_")[0])
+            hras_dfs.append(self._read_hras_from_rsem(fname))
+
+        hras_df = pd.concat(hras_dfs)
+        hras_df["accession_number"] = accession_numbers
+
+        nras_dfs = []
+        accession_numbers = []
+        for fname in self.rsem_fnames:
+            accession_numbers.append(fname.name.split("_")[0])
+            nras_dfs.append(self._read_nras_from_rsem(fname))
+
+        nras_df = pd.concat(nras_dfs)
+        nras_df["accession_number"] = accession_numbers
+
+        ras_df = kras_df.merge(
+            hras_df, on="accession_number", left_prefix="kras_", right_prefix="hras_"
+        )
+        ras_df = ras_df.merge(nras_df, on="accession_number", right_prefix="nras_")
+
+        self.output_counts = star_df.merge(ras_df, on="accession_number")
 
     def _measure_kras_variant_stoichiometry(self, fname: str, kras_variants: str):
         print(f"Measuring kras {kras_variants} stoichiometry in: {fname}")
