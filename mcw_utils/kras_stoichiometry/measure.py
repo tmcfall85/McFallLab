@@ -130,6 +130,7 @@ class RNAseqRas:
         ras_df = ras_df.merge(nras_df, on="accession_number", right_prefix="nras_")
 
         self.output_counts = star_df.merge(ras_df, on="accession_number")
+        print(self.output_counts.head())
 
     def _measure_kras_variant_stoichiometry(self, fname: str, kras_variants: str):
         print(f"Measuring kras {kras_variants} stoichiometry in: {fname}")
