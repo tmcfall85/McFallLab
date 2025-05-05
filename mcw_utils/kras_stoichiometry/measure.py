@@ -125,9 +125,9 @@ class RNAseqRas:
         nras_df["accession_number"] = accession_numbers
 
         ras_df = kras_df.merge(
-            hras_df, on="accession_number", left_prefix="kras_", right_prefix="hras_"
+            hras_df, on="accession_number", suffixes=("_kras", "_hras")
         )
-        ras_df = ras_df.merge(nras_df, on="accession_number", right_prefix="nras_")
+        ras_df = ras_df.merge(nras_df, on="accession_number", suffixes=("", "_nras"))
 
         self.output_counts = star_df.merge(ras_df, on="accession_number")
         print(self.output_counts.head())
