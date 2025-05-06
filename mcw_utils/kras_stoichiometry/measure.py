@@ -56,7 +56,7 @@ class RNAseqRas:
 
     def _read_hras_from_rsem(self, fname):
         df = pd.read_csv(fname, sep="\t")
-        hras = "ENSG00000276536"
+        hras = "ENSG00000174775"
         hras_df = df[df.gene_id.str.startswith(hras)]
         return hras_df
 
@@ -105,6 +105,8 @@ class RNAseqRas:
 
         kras_df = pd.concat(kras_dfs)
         kras_df["accession_number"] = accession_numbers
+        print("kras")
+        print(kras_df.iloc[0])
 
         hras_dfs = []
         accession_numbers = []
@@ -114,6 +116,8 @@ class RNAseqRas:
 
         hras_df = pd.concat(hras_dfs)
         hras_df["accession_number"] = accession_numbers
+        print("hras")
+        print(hras_df.iloc[0])
 
         nras_dfs = []
         accession_numbers = []
@@ -123,11 +127,13 @@ class RNAseqRas:
 
         nras_df = pd.concat(nras_dfs)
         nras_df["accession_number"] = accession_numbers
+        print("nras")
+        print(nras_df.iloc[0])
 
-        ras_df = kras_df.merge(
-            hras_df, on="accession_number", suffixes=("_kras", "_hras")
+        ras_df = kras_df.merge(hras_df, on="accession_number", suffixes=("_kras", ""))
+        ras_df = ras_df.merge(
+            nras_df, on="accession_number", suffixes=("_hras", "_nras")
         )
-        ras_df = ras_df.merge(nras_df, on="accession_number", suffixes=("", "_nras"))
 
         self.output_counts = star_df.merge(ras_df, on="accession_number")
 
