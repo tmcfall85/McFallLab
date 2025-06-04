@@ -25,14 +25,6 @@ import pymc as pm
 
 # PARSeF - Probabilistic Assignment of RNA-Seq Fragments
 
-# CHUNT - CHaracterization of UNknown Transcripts
-
-# BULLSHIT - Bioinformatics Utility for Local and Long-Range Sequence Homology Identification and Testing
-
-# LIZARD - Localized Isoform and Zero-Alignment Read Distribution
-
-#
-
 
 @cached
 def local_align(ref_seq, frag):
