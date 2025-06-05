@@ -68,7 +68,7 @@ class Isoforms:
     splits: list = field(default_factory=list)
     normalized_rna_seq_vector: Union[np.ndarray, None] = None
     distances: list = field(default_factory=list)
-    transcript_count: int = 0
+    total_transcript_count: int = 0
     simulation_results: Union[dict, None] = None
     simulated_data: Union[pd.DataFrame, None] = None
     sample: dict = field(default_factory=dict)
@@ -214,52 +214,50 @@ class Isoforms:
         )
 
     def _generate_alignment_model_features(self):
-        transcript_dfs = []
+        transcript_dfs = {}
         all_names = []
-        for key in self.transcripts.keys():
+        for isoform in self.isoform_list:
             names = []
             ori = []
             seq = []
-            for read in self.transcripts[key]:
+            for read in self.transcripts[isoform]:
                 names.append(read.to_dict()["name"])
                 ori.append(read.is_forward)
                 seq.append(read.seq)
 
-            transcript_dfs.append(
-                pd.DataFrame(
-                    {"names": names, "ori": ori, "seq": seq, "transcript": key}
-                )
+            transcript_dfs[isoform] = pd.DataFrame(
+                {"names": names, "ori": ori, "seq": seq}
             )
             all_names += names
         transcript_count = {}
         overlaps = set(all_names)
-        all_names = list(overlaps)
-        self.transcript_count = len(all_names)
+        all_names = list(set(all_names))
+        self.total_transcript_count = len(all_names)
 
-        for transcript_df in transcript_dfs:
-            transcript = transcript_df.transcript.iloc[0]
-            name_set = set(transcript_df.names)
-            unique_set = name_set.copy()
-            for inner_transcript_df in transcript_dfs:
-                if inner_transcript_df.transcript.iloc[0] == transcript:
+        for isoform in self.isoform_list:
+            unique_set = set(transcript_dfs[isoform].names)
+            for inner_isoform in self.isoform_list:
+                if inner_isoform == isoform:
                     continue
-                inner_names = set(inner_transcript_df.names)
-                unique_set = unique_set - inner_names
-            transcript_count[transcript] = len(unique_set)
+                inner_transcript_df = transcript_dfs[inner_isoform]
+                inner_name_set = set(inner_transcript_df.names)
+                unique_set = unique_set - inner_name_set
+            transcript_count[isoform] = len(unique_set)
             overlaps = overlaps - unique_set
 
-        for i in range(len(overlaps)):
+        overlaps = list(overlaps)
+        for overlap in overlaps:
             hits = 0
-            transcript_hits = {key: 0 for key in self.transcripts.keys()}
+            transcript_hits = {isoform: 0 for isoform in self.isoform_list}
 
-            for transcript in self.transcripts.keys():
-                for k in self.transcripts[transcript]:
-                    if k.to_dict()["name"] == list(overlaps)[i]:
+            for isoform in self.isoform_list:
+                for transcript in self.transcripts[isoform]:
+                    if transcript.to_dict()["name"] == overlap:
                         hits += 1
-                        transcript_hits[transcript] += 1
+                        transcript_hits[isoform] += 1
 
-            for transcript in transcript_hits.keys():
-                transcript_count[transcript] += transcript_hits[transcript] / hits
+            for isoform in self.isoform_list:
+                transcript_count[isoform] += transcript_hits[isoform] / hits
         transcript_count_df = pd.Series(transcript_count)
         self.normalized_rna_seq_vector = (
             np.array(transcript_count_df.values) / transcript_count_df.sum()
@@ -270,7 +268,8 @@ class Isoforms:
             matched = []
             for_seq = ""
             rev_seq = ""
-            for transcript_df in transcript_dfs:
+            for isoform in self.isoform_list:
+                transcript_df = transcript_dfs[isoform]
                 match_df = transcript_df[transcript_df.names == name]
                 if len(match_df) == 2:
                     for_seq = match_df[match_df.ori].iloc[0].seq
@@ -283,21 +282,16 @@ class Isoforms:
             rev_scores = []
             for_gaps = []
             rev_gaps = []
-            # for_len_mismatches = []
-            # rev_len_mismatches = []
-            for key in self.sequences.keys():
-
-                l = local_align(for_seq, self.sequences[key])
+            for isoform in self.isoform_list:
+                l = local_align(for_seq, self.sequences[isoform])
                 for_scores.append(l[0].score)
                 for_match = l[0].seqA[l[0].start : l[0].end]
                 for_gaps.append(len(for_match.split("-")) - 1)
-                # for_len_mismatches.append(len(for_seq) - len(for_match))
 
-                l = local_align(rev_seq, self.sequences[key])
+                l = local_align(rev_seq, self.sequences[isoform])
                 rev_scores.append(l[0].score)
                 rev_match = l[0].seqA[l[0].start : l[0].end]
                 rev_gaps.append(len(rev_match.split("-")) - 1)
-                # rev_len_mismatches.append(len(rev_seq) - len(rev_match))
 
             inside_df = pd.DataFrame(
                 {
@@ -305,8 +299,6 @@ class Isoforms:
                     "r_score": rev_scores,
                     "f_gaps": for_gaps,
                     "r_gaps": rev_gaps,
-                    # "f_len_mismatch": for_len_mismatches,
-                    # "r_len_mismatch": rev_len_mismatches,
                     "match": matched,
                 }
             )
@@ -512,7 +504,7 @@ class Isoforms:
         x0 = x[1:][::-1]
         print(x0)
         if n is None:
-            n = self.transcript_count
+            n = self.total_transcript_count
 
         # Define bounds for each variable
         bounds = Bounds(lb=[0] * len(x0), ub=[1] * len(x0))
