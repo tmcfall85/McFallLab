@@ -74,32 +74,6 @@ class Isoforms:
     fraction_pos_cis: Union[list, None] = None
     isoform_fractions: Union[pd.DataFrame, None] = None
 
-    def simulate_experiment(self, n=None, max_iter=10):
-        # Initial guess
-        x = [1 / (i + 1) for i in range(len(self.sequences))]
-        x0 = x[1:][::-1]
-        print(x0)
-        if n is None:
-            n = self.transcript_count
-
-        # Define bounds for each variable
-        bounds = Bounds(lb=[0] * len(x0), ub=[1] * len(x0))
-
-        # Using a sequence of tuples
-        # bounds = ((-1, 2), (0, 3))
-        objective_function = lambda x: self._score_x(x, n)
-        # Minimize the function with bounds using L-BFGS-B method
-        self.simulation_results = differential_evolution(
-            objective_function, bounds, x0=x0, maxiter=max_iter
-        )
-        split_transcripts = list(self.sequences.keys())[:-1]
-        simulated_data = {key: [] for key in split_transcripts}
-        for i in range(len(self.splits)):
-            for j, t in enumerate(split_transcripts):
-                simulated_data[t].append(self.splits[i][j])
-        simulated_data["distances"] = self.distances
-        self.simulated_data = pd.DataFrame(simulated_data)
-
     def __post_init__(self):
         self.bam_fname = Path(self.bam_fname)
         self.seq_fname = Path(self.seq_fname)
@@ -142,9 +116,9 @@ class Isoforms:
 
     def _measure_length_distribution(self):
         lengths = []
-        for k in self.transcripts.keys():
-            for isoform in self.transcripts[k]:
-                lengths.append(len(isoform.seq))
+        for isoform in self.isoform_list:
+            for transcript in self.transcripts[isoform]:
+                lengths.append(len(transcript.seq))
 
         length_hist = np.histogram(lengths)
 
@@ -156,12 +130,11 @@ class Isoforms:
         self.skip_distributions = {}
         self.effective_lengths = {}
         self.max_skip_prob = {}
-        for isoform_name in self.transcripts.keys():
-            transcripts = self.transcripts[isoform_name]
+        for isoform in self.isoform_list:
             skips = []
             left_start = []
             right_start = []
-            for transcript in transcripts:
+            for transcript in self.transcripts[isoform]:
                 if transcript.is_forward:
                     left_start.append(int(transcript.to_dict()["ref_pos"]) - 1)
                     right_start.append(int(transcript.to_dict()["next_ref_pos"]) - 1)
@@ -177,16 +150,16 @@ class Isoforms:
             sk_hist = np.histogram(skips)
             sk_hist_dist = rv_histogram(sk_hist, density=False)
 
-            self.left_start_distributions[isoform_name] = ls_hist_dist
-            self.right_start_distributions[isoform_name] = rs_hist_dist
-            self.skip_distributions[isoform_name] = sk_hist_dist
+            self.left_start_distributions[isoform] = ls_hist_dist
+            self.right_start_distributions[isoform] = rs_hist_dist
+            self.skip_distributions[isoform] = sk_hist_dist
 
             p = []
             for i in range(max(skips) + 1):
                 p.append(sk_hist_dist.pdf(i))
 
-            self.effective_lengths[isoform_name] = max(right_start) - min(left_start)
-            self.max_skip_prob[isoform_name] = max(p)
+            self.effective_lengths[isoform] = max(right_start) - min(left_start)
+            self.max_skip_prob[isoform] = max(p)
 
     def _sim_int(self, hist_dist):
         return int(np.round(hist_dist.ppf(np.random.rand()) + 0.25))
@@ -531,6 +504,32 @@ class Isoforms:
         if self.simulated_data is None:
             raise ValueError("No simulated data to save. Run simulation first.")
         self.simulated_data.to_csv(fname, index=False)
+
+    def simulate_experiment(self, n=None, max_iter=10):
+        # Initial guess
+        x = [1 / (i + 1) for i in range(len(self.sequences))]
+        x0 = x[1:][::-1]
+        print(x0)
+        if n is None:
+            n = self.transcript_count
+
+        # Define bounds for each variable
+        bounds = Bounds(lb=[0] * len(x0), ub=[1] * len(x0))
+
+        # Using a sequence of tuples
+        # bounds = ((-1, 2), (0, 3))
+        objective_function = lambda x: self._score_x(x, n)
+        # Minimize the function with bounds using L-BFGS-B method
+        self.simulation_results = differential_evolution(
+            objective_function, bounds, x0=x0, maxiter=max_iter
+        )
+        split_transcripts = list(self.sequences.keys())[:-1]
+        simulated_data = {key: [] for key in split_transcripts}
+        for i in range(len(self.splits)):
+            for j, t in enumerate(split_transcripts):
+                simulated_data[t].append(self.splits[i][j])
+        simulated_data["distances"] = self.distances
+        self.simulated_data = pd.DataFrame(simulated_data)
 
     def measure_isoform_fractions(self, quantile=0.20):
         if self.simulated_data is None:
