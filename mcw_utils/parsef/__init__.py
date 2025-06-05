@@ -1,1 +1,1 @@
-from .parsef import Isoforms
+from .parsef import Parsef
