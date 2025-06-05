@@ -9,45 +9,44 @@ from tqdm import tqdm
 @dataclass
 class SimulateIsoform(Isoform):
 
-    def _sim_isoform_transcripts(self, isoform_counts):
-        sim_left_starts = {}
-        sim_right_starts = {}
-        sim_skips = {}
-        for transcript in isoform_counts.keys():
-            sim_transcript_left_starts = []
-            sim_transcript_right_starts = []
-            sim_transcript_skips = []
-            while len(sim_transcript_left_starts) < isoform_counts[transcript]:
-                ls = sim_int(self.left_start_distributions[transcript])
-                rs = sim_int(self.right_start_distributions[transcript])
-                sk = rs - ls
-
-                if np.random.rand() * self.max_skip_prob[
-                    transcript
-                ] < self.skip_distributions[transcript].pdf(sk):
-                    sim_transcript_left_starts.append(ls)
-                    sim_transcript_right_starts.append(rs)
-                    sim_transcript_skips.append(sk)
-            sim_left_starts[transcript] = sim_transcript_left_starts
-            sim_right_starts[transcript] = sim_transcript_right_starts
-            sim_skips[transcript] = sim_transcript_skips
-        return sim_left_starts, sim_right_starts, sim_skips
-
     def _sim_isoform_counts(self, n, splits: list):
-        keys = list(self.transcripts.keys())
-        isoform_counts = {key: 0 for key in keys}
+        isoform_counts = {isoform: 0 for isoform in self.isoform_list}
 
         for i in range(n):
             r = np.random.rand()
             assigned = False
-            for split, key in zip(splits, keys):
+            for split, key in zip(splits, self.isoform_list):
                 if r <= split:
                     assigned = True
                     isoform_counts[key] += 1
                     break
             if assigned == False:
-                isoform_counts[keys[-1]] += 1
+                isoform_counts[self.isoform_list[-1]] += 1
         return isoform_counts
+
+    def _sim_isoform_transcripts(self, isoform_counts):
+        sim_left_starts = {}
+        sim_right_starts = {}
+        sim_skips = {}
+        for isoform in self.isoform_list:
+            sim_transcript_left_starts = []
+            sim_transcript_right_starts = []
+            sim_transcript_skips = []
+            while len(sim_transcript_left_starts) < isoform_counts[isoform]:
+                ls = sim_int(self.left_start_distributions[isoform])
+                rs = sim_int(self.right_start_distributions[isoform])
+                sk = rs - ls
+
+                if np.random.rand() * self.max_skip_prob[
+                    isoform
+                ] < self.skip_distributions[isoform].pdf(sk):
+                    sim_transcript_left_starts.append(ls)
+                    sim_transcript_right_starts.append(rs)
+                    sim_transcript_skips.append(sk)
+            sim_left_starts[isoform] = sim_transcript_left_starts
+            sim_right_starts[isoform] = sim_transcript_right_starts
+            sim_skips[isoform] = sim_transcript_skips
+        return sim_left_starts, sim_right_starts, sim_skips
 
     def _generate_fragment_pair(self, seq, sim_left_start, sim_right_start):
         for_frag_len = sim_int(self.length_distribution)
@@ -81,30 +80,30 @@ class SimulateIsoform(Isoform):
         sim_left_starts, sim_right_starts, _ = self._sim_isoform_transcripts(
             isoform_counts
         )
-        scores = {key: [] for key in self.sequences.keys()}
-        for transcript in sim_left_starts.keys():
+        scores = {isoform: [] for isoform in self.isoform_list}
+        for isoform in self.isoform_list:
             for sim_left_start, sim_right_start in tqdm(
-                zip(sim_left_starts[transcript], sim_right_starts[transcript])
+                zip(sim_left_starts[isoform], sim_right_starts[isoform])
             ):
                 for_frag, rev_frag = self._generate_fragment_pair(
-                    self.sequences[transcript], sim_left_start, sim_right_start
+                    self.sequences[isoform], sim_left_start, sim_right_start
                 )
-                for inner_transcript in self.sequences.keys():
-                    scores[inner_transcript].append(
+                for inner_isoform in self.isoform_list:
+                    scores[inner_isoform].append(
                         self._score_frags(
-                            self.sequences[inner_transcript], for_frag, rev_frag
+                            self.sequences[inner_isoform], for_frag, rev_frag
                         )
                     )
 
         scores_df = pd.DataFrame(scores)
 
         scores_df["norm"] = scores_df.sum(axis=1)
-        norm_keys = []
-        for key in self.sequences.keys():
-            scores_df[f"{key}_norm"] = scores_df[key] / scores_df.norm
-            norm_keys.append(f"{key}_norm")
+        norm_isoforms = []
+        for isoform in self.isoform_list:
+            scores_df[f"{isoform}_norm"] = scores_df[isoform] / scores_df.norm
+            norm_isoforms.append(f"{isoform}_norm")
 
-        simulated_rna_seq_vector = np.array(scores_df[norm_keys].sum().values)
+        simulated_rna_seq_vector = np.array(scores_df[norm_isoforms].sum().values)
         simulated_rna_seq_vector /= simulated_rna_seq_vector.sum()
 
         print("experimental")

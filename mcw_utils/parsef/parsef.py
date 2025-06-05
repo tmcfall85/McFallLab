@@ -41,7 +41,6 @@ class Parsef(
         # Initial guess
         x = [1 / (i + 1) for i in range(len(self.sequences))]
         x0 = x[1:][::-1]
-        print(x0)
         if n is None:
             n = self.total_transcript_count
 
@@ -49,14 +48,13 @@ class Parsef(
         bounds = Bounds(lb=[0] * len(x0), ub=[1] * len(x0))
 
         # Using a sequence of tuples
-        # bounds = ((-1, 2), (0, 3))
         objective_function = lambda x: self._score_x(x, n)
-        # Minimize the function with bounds using L-BFGS-B method
+
         self.simulation_results = differential_evolution(
             objective_function, bounds, x0=x0, maxiter=max_iter
         )
-        split_transcripts = list(self.sequences.keys())[:-1]
-        simulated_data = {key: [] for key in split_transcripts}
+        split_transcripts = self.isoform_list[:-1]
+        simulated_data = {isoform: [] for isoform in split_transcripts}
         for i in range(len(self.splits)):
             for j, t in enumerate(split_transcripts):
                 simulated_data[t].append(self.splits[i][j])
@@ -81,7 +79,7 @@ class Parsef(
         splits = []
         neg_cis = []
         pos_cis = []
-        for transcript in list(self.sequences.keys())[:-1]:
+        for transcript in self.isoform_list[:-1]:
             X_new, f_pred_samples = self._gp_model(small_simulated_data, transcript)
 
             self._plot_gp_model(small_simulated_data, transcript, X_new, f_pred_samples)
@@ -105,7 +103,7 @@ class Parsef(
 
         self.isoform_fractions = pd.DataFrame(
             {
-                "transcript": list(self.sequences.keys()),
+                "transcript": self.isoform_list,
                 "fraction": self.fractions,
                 "neg_ci": self.fraction_neg_cis,
                 "pos_ci": self.fraction_pos_cis,
