@@ -45,6 +45,10 @@ def pred_clf(clf, f1_score, f2_score, f1_gaps, f2_gaps):
     return pred
 
 
+def sim_int(hist_dist):
+    return int(np.round(hist_dist.ppf(np.random.rand()) + 0.25))
+
+
 @dataclass
 class Isoforms:
     bam_fname: Union[str, Path]
@@ -161,9 +165,6 @@ class Isoforms:
             self.effective_lengths[isoform] = max(right_start) - min(left_start)
             self.max_skip_prob[isoform] = max(p)
 
-    def _sim_int(self, hist_dist):
-        return int(np.round(hist_dist.ppf(np.random.rand()) + 0.25))
-
     def sim_isoform_transcripts(self, isoform_counts):
         sim_left_starts = {}
         sim_right_starts = {}
@@ -173,8 +174,8 @@ class Isoforms:
             sim_transcript_right_starts = []
             sim_transcript_skips = []
             while len(sim_transcript_left_starts) < isoform_counts[transcript]:
-                ls = self._sim_int(self.left_start_distributions[transcript])
-                rs = self._sim_int(self.right_start_distributions[transcript])
+                ls = sim_int(self.left_start_distributions[transcript])
+                rs = sim_int(self.right_start_distributions[transcript])
                 sk = rs - ls
 
                 if np.random.rand() * self.max_skip_prob[
@@ -205,8 +206,8 @@ class Isoforms:
         return isoform_counts
 
     def _generate_fragment_pair(self, seq, sim_left_start, sim_right_start):
-        for_frag_len = self._sim_int(self.length_distribution)
-        rev_frag_len = self._sim_int(self.length_distribution)
+        for_frag_len = sim_int(self.length_distribution)
+        rev_frag_len = sim_int(self.length_distribution)
         return (
             seq[sim_left_start : sim_left_start + for_frag_len],
             seq[sim_right_start : sim_right_start + rev_frag_len],
