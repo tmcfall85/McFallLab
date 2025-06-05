@@ -59,13 +59,19 @@ class GaussianProcess(Isoform):
         plot_gp_dist(ax, samples=f_pred_samples.T, x=X_new)
         # plot the data and the true latent function
         # plt.plot(X, f_true, "dodgerblue", lw=3, label="True f")
-        plt.plot(
-            data[col], data.distances, "ok", ms=3, alpha=0.5, label="Observed data"
-        )
 
         # axis labels and title
         plt.xlabel("X")
         plt.title("Posterior distribution over $f(x)$ at the observed values")
+        plt.legend()
+
+        fig = plt.figure(figsize=(12, 5))
+        ax = fig.gca()
+        plt.plot(
+            data[col], data.distances, "ok", ms=3, alpha=0.5, label="Observed data"
+        )
+        plt.xlabel("X")
+        plt.title("Histogram")
         plt.legend()
 
     def _sample_gp_fit(self, X_new, f_pred_samples):
