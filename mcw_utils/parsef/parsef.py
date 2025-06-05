@@ -213,7 +213,7 @@ class Isoforms:
             seq[sim_right_start : sim_right_start + rev_frag_len],
         )
 
-    def _generate_alignement_model_features(self):
+    def _generate_alignment_model_features(self):
         transcript_dfs = []
         all_names = []
         for key in self.transcripts.keys():
@@ -318,7 +318,7 @@ class Isoforms:
 
     def fit_alignment_model(self):
         if self.X is None:
-            self._generate_alignement_model_features()
+            self._generate_alignment_model_features()
         assert self.X is not None, "X is None, cannot fit model."
         assert self.y is not None, "y is None, cannot fit model."
         X_train, X_test, y_train, y_test = train_test_split(
