@@ -1,8 +1,5 @@
-from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Union
+from dataclasses import dataclass
 import pysam
-import numpy as np
 from .isoform import Isoform
 
 
