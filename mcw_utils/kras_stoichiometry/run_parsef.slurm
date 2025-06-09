@@ -19,7 +19,7 @@ git clone https://github.com/tmcfall85/McFallLab.git
 cd McFallLab 
 git checkout issue_11
 git rev-parse HEAD
-pip install -e .
+pip install .
 cd ../
 mkdir -p /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/parsef
 samtools sort /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/star_output/Aligned.to.Transcriptome.out.bam > /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/star_output/Aligned.to.Transcriptome.sorted.out.bam
