@@ -73,7 +73,7 @@ class ModelAlignment(Isoform):
             for isoform in self.isoform_list:
                 transcript_df = transcript_dfs[isoform]
                 match_df = transcript_df[transcript_df.names == name]
-                if len(match_df) == 2:
+                if len(match_df) >= 2:
                     for_seq = match_df[match_df.ori].iloc[0].seq
                     rev_seq = match_df[match_df.ori == False].iloc[0].seq
                     matched.append(1)
