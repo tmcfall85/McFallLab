@@ -21,7 +21,7 @@ git checkout issue_11
 git rev-parse HEAD
 pip install -e .
 cd ../
-mkdir -p ./parsef
-samtools sort Aligned.to.Transcriptome.out.bam > Aligned.to.Transcriptome.sorted.out.bam
-samtools index Aligned.to.Transcriptome.sorted.out.bam
-python measure_parsef.py Aligned.to.Transcriptome.sorted.out.bam /group/tmcfall/work/rsem.seq kras ./parsef
+mkdir -p /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/parsef
+samtools sort /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/star_output/Aligned.to.Transcriptome.out.bam > /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/star_output/Aligned.to.Transcriptome.sorted.out.bam
+samtools index /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/star_output/Aligned.to.Transcriptome.sorted.out.bam
+python measure_parsef.py /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/star_output/Aligned.to.Transcriptome.sorted.out.bam /group/tmcfall/work/rsem.seq kras /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/parsef
