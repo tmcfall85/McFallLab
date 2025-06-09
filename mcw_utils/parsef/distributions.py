@@ -34,6 +34,12 @@ class Distribution(Isoform):
                     left_start.append(int(transcript.to_dict()["ref_pos"]) - 1)
                     right_start.append(int(transcript.to_dict()["next_ref_pos"]) - 1)
                     skips.append(right_start[-1] - left_start[-1])
+            if len(skips) == 0:
+                print(isoform)
+                raise ValueError(
+                    f"No transcripts found for isoform {isoform}. "
+                    "Please check the input BAM file."
+                )
 
             ls_hist = np.histogram(left_start)
 
