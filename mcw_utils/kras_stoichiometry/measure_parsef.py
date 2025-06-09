@@ -1,11 +1,7 @@
 from mcw_utils.parsef import Parsef
 import pandas as pd
 from pathlib import Path
-
-fname_sorted = (
-    "/mnt/c/Users/msochor/Downloads/tlsort3/TL-20-8D3FFE_rsem.transcript.sorted.bam"
-)
-fname_seq = "/mnt/c/Users/msochor/Downloads/rsem.seq"
+import argparse
 
 
 def main(fname_sorted=fname_sorted, fname_seq=fname_seq, ras="kras", out_dir=None):
@@ -50,3 +46,34 @@ def main(fname_sorted=fname_sorted, fname_seq=fname_seq, ras="kras", out_dir=Non
         pd.DataFrame(isoforms.effective_lengths).to_csv(
             out_dir / f"{ras}_rsem_effective_lengths.csv", index=False
         )
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Measure RAS isoform stoichiometry.")
+    parser.add_argument(
+        "--fname_sorted",
+        type=str,
+        help="Path to the sorted BAM file.",
+    )
+    parser.add_argument(
+        "--fname_seq",
+        type=str,
+        help="Path to the sequence file.",
+    )
+    parser.add_argument(
+        "--ras",
+        type=str,
+        choices=["kras", "hras"],
+        default="kras",
+        help="Type of RAS isoform to measure.",
+    )
+    parser.add_argument(
+        "--out_dir",
+        type=str,
+        default=None,
+        help="Output directory to save results.",
+    )
+
+    args = parser.parse_args()
+    main(args.fname_sorted, args.fname_seq, args.ras, args.out_dir)
