@@ -4,7 +4,7 @@ from pathlib import Path
 import argparse
 
 
-def main(fname_sorted=fname_sorted, fname_seq=fname_seq, ras="kras", out_dir=None):
+def main(fname_sorted, fname_seq, ras, out_dir):
     if ras == "kras":
         isoform_list = [
             "ENST00000256078.8",
