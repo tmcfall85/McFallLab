@@ -13,10 +13,23 @@ def main(fname_sorted, fname_seq, ras, out_dir):
             "ENST00000557334.5",
         ]
     elif ras == "hras":
-        isoform_list = [
-            "ENST00000311189.7",
-            "ENST00000397594.5",
+        isoform_list = [  #'ENST00000311189.7',
+            #'ENST00000397594.5',
+            #'ENST00000397596.6',
+            #'ENST00000493230.5',
+            "ENST00000451590.5",
+            "ENST00000417302.5",
+            "ENST00000462734.1",
+            "ENST00000468682.2",
+            "ENST00000478324.5",
+            "ENST00000479482.1",
+            #'ENST00000482021.1',
+            "ENST00000369535.4",
         ]
+        # isoform_list = [
+        #    "ENST00000311189.7",
+        #    "ENST00000397594.5",
+        # ]
         # "ENST00000397596.6",
         # "ENST00000493230.5",
         # "ENST00000451590.5",
@@ -43,9 +56,9 @@ def main(fname_sorted, fname_seq, ras, out_dir):
         isoforms.isoform_fractions.to_csv(
             out_dir / f"{ras}_rsem_isoform_fractions.csv", index=False
         )
-        pd.DataFrame(isoforms.effective_lengths).to_csv(
-            out_dir / f"{ras}_rsem_effective_lengths.csv", index=False
-        )
+        pd.DataFrame(
+            isoforms.effective_lengths, index=["effective_length"]
+        ).transpose().to_csv(out_dir / f"{ras}_rsem_effective_lengths.csv")
 
 
 if __name__ == "__main__":
