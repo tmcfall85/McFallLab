@@ -7,14 +7,14 @@ from .isoform import Isoform
 class ReadBamAndSeq(Isoform):
 
     def _read_isoform_bam(self):
-        samfile2 = pysam.AlignmentFile(str(self.bam_fname), "rb")
-        self.transcripts = {}
-        for isoform in self.isoform_list:
-            self.transcripts[isoform] = []
+        with pysam.AlignmentFile(str(self.bam_fname), "rb") as sam_file:
+            self.transcripts = {}
+            for isoform in self.isoform_list:
+                self.transcripts[isoform] = []
 
-        for isoform in self.isoform_list:
-            for read in samfile2.fetch(isoform):
-                self.transcripts[isoform].append(read)
+            for isoform in self.isoform_list:
+                for read in sam_file.fetch(isoform):
+                    self.transcripts[isoform].append(read)
 
     def _read_seq_str(self):
         save_next = False

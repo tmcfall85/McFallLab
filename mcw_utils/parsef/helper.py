@@ -1,4 +1,4 @@
-from Bio import pairwise2
+from Bio.Align import PairwiseAligner
 
 import numpy as np
 from memoization import cached
@@ -6,13 +6,19 @@ from memoization import cached
 from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 
+aligner = PairwiseAligner()
+aligner.mode = "local"
+aligner.match_score = 5
+aligner.mismatch_score = -4
+aligner.open_gap_score = -5
+aligner.extend_gap_score = -2
+
 
 @cached
 def local_align(ref_seq, frag):
-    return pairwise2.align.localms(ref_seq, frag, 5, -4, -5, -2)
+    return aligner.align(ref_seq, frag)
 
 
-@cached
 def pred_clf(clf, f1_score, f2_score, f1_gaps, f2_gaps):
     if clf is None:
         raise ValueError("Classifier is not fitted. Please fit the model first.")
@@ -28,6 +34,7 @@ def pred_clf(clf, f1_score, f2_score, f1_gaps, f2_gaps):
 
 def sim_int(hist_dist):
     return int(np.round(hist_dist.ppf(np.random.rand()) + 0.25))
+
 
 def x_to_split(xs):
     split = [xs[0]]
