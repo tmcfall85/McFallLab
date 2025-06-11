@@ -60,4 +60,7 @@ class Distribution(Isoform):
                 p.append(sk_hist_dist.pdf(i))
 
             self.effective_lengths[isoform] = max(right_start) - min(left_start)
+            self.min_sequences[isoform] = self.sequences[isoform][
+                min(left_start) : max(right_start)
+            ]
             self.max_skip_prob[isoform] = max(p)

@@ -14,6 +14,7 @@ class Isoform:
     isoform_list: list[str] = field(default_factory=list)
     transcripts: dict = field(default_factory=dict)
     sequences: dict = field(default_factory=dict)
+    min_sequences: dict = field(default_factory=dict)
     length_distribution: Union[rv_histogram, None] = None
     left_start_distributions: dict = field(default_factory=dict)
     right_start_distributions: dict = field(default_factory=dict)

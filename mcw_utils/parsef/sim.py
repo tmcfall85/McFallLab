@@ -59,12 +59,12 @@ class SimulateIsoform(Isoform):
     def _score_frags(self, ref_seq, f1, f2):
         l = local_align(ref_seq, f1)
         f1_score = l[0].score
-        for_match = l[0].seqA[l[0].start : l[0].end]
+        for_match = l[0].sequences[0][l[0].indices[0][0] : l[0].indices[0][-1]]
         f1_gaps = len(for_match.split("-")) - 1
 
         l = local_align(ref_seq, f2)
         f2_score = l[0].score
-        rev_match = l[0].seqA[l[0].start : l[0].end]
+        rev_match = l[0].sequences[0][l[0].indices[0][0] : l[0].indices[0][-1]]
         f2_gaps = len(rev_match.split("-")) - 1
 
         pred = pred_clf(self.clf, f1_score, f2_score, f1_gaps, f2_gaps)
@@ -91,7 +91,7 @@ class SimulateIsoform(Isoform):
                 for inner_isoform in self.isoform_list:
                     scores[inner_isoform].append(
                         self._score_frags(
-                            self.sequences[inner_isoform], for_frag, rev_frag
+                            self.min_sequences[inner_isoform], for_frag, rev_frag
                         )
                     )
 
