@@ -50,11 +50,15 @@ def main(fname_sorted, fname_seq, ras, out_dir):
         out_dir.mkdir(parents=True, exist_ok=True)
     isoforms.measure_distributions()
     isoforms.fit_alignment_model()
+    print("Simming experiment")
     isoforms.simulate_experiment(max_iter=5)
     if out_dir is not None:
+        print("saving simulated data")
         isoforms.save_simulated_data(out_dir / f"{ras}_rsem_simulated_data.csv")
+    print("Measuring isoform fractions")
     isoforms.measure_isoform_fractions(quantile=0.5)
     if out_dir is not None:
+        print("Saving isoform fractions and effective lengths")
         isoforms.isoform_fractions.to_csv(
             out_dir / f"{ras}_rsem_isoform_fractions.csv", index=False
         )
