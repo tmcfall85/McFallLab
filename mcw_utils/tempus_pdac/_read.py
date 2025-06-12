@@ -38,8 +38,6 @@ def _read_tempus_files_in_directory(directory_path):
     specimen_block_id = []
     specimen_tumor_percentage = []
     signout_date = []
-    collection_date = []
-    receipt_date = []
     for file_path in directory.iterdir():
         if file_path.is_dir():
             for inner_file_path in file_path.iterdir():
@@ -66,9 +64,11 @@ def _read_tempus_files_in_directory(directory_path):
                         acc_num.append(file_path.parts[-1])
                         accession_id.append(data["order"]["accessionId"])
                         report_type.append(data["report"]["workflow"]["reportType"])
-                        signout_date.append(data["report"]["signoutDate"])
-                        collection_date.append(data["specimens"][0]["collectionDate"])
-                        receipt_date.append(data["specimens"][0]["receiptDate"])
+
+                        if data["metadata"]["schemaVersion"] in ["1.3.1", "1.3.2"]:
+                            signout_date.append(data["report"]["signout_date"])
+                        else:
+                            signout_date.append(data["report"]["signoutDate"])
 
                         has_kras_variant = False
                         if report_type[-1] == "DNA":
@@ -201,6 +201,7 @@ def _read_tempus_files_in_directory(directory_path):
             "specimen_sample_site": specimen_sample_site,
             "specimen_block_id": specimen_block_id,
             "specimen_tumor_percentage": specimen_tumor_percentage,
+            "signout_date": signout_date,
         }
     )
 
