@@ -121,12 +121,6 @@ class ModelAlignment(Isoform):
 
         model_accuracy = clf.score(X_test, y_test)
         print(f"Model accuracy: {model_accuracy}")
-        if model_accuracy < 0.95:
-            print(
-                "Model accuracy is below 0.95, consider retraining with more data or adjusting parameters."
-            )
-            self.clf = None
-        else:
-            clf = RandomForestClassifier(max_depth=10, random_state=42)
-            clf.fit(self.X.values, self.y)
-            self.clf = clf
+        clf = RandomForestClassifier(max_depth=10, random_state=42)
+        clf.fit(self.X.values, self.y)
+        self.clf = clf
