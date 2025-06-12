@@ -45,14 +45,16 @@ def main(fname_sorted, fname_seq, ras, out_dir):
     isoforms = Parsef(
         bam_fname=fname_sorted, seq_fname=fname_seq, isoform_list=isoform_list
     )
-    isoforms.measure_distributions()
-    isoforms.fit_alignment_model()
-    isoforms.simulate_experiment(max_iter=5)
-    isoforms.measure_isoform_fractions(quantile=0.5)
     if out_dir is not None:
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
+    isoforms.measure_distributions()
+    isoforms.fit_alignment_model()
+    isoforms.simulate_experiment(max_iter=5)
+    if out_dir is not None:
         isoforms.save_simulated_data(out_dir / f"{ras}_rsem_simulated_data.csv")
+    isoforms.measure_isoform_fractions(quantile=0.5)
+    if out_dir is not None:
         isoforms.isoform_fractions.to_csv(
             out_dir / f"{ras}_rsem_isoform_fractions.csv", index=False
         )
