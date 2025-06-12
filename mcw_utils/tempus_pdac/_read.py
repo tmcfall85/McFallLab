@@ -66,7 +66,13 @@ def _read_tempus_files_in_directory(directory_path):
                         report_type.append(data["report"]["workflow"]["reportType"])
 
                         if data["metadata"]["schemaVersion"] in ["1.3.1", "1.3.2"]:
-                            signout_date.append(data["report"]["signout_date"])
+                            try:
+                                signout_date.append(data["report"]["signout_date"])
+                            except KeyError:
+                                print(data["metadata"]["schemaVersion"])
+                                print(data["report"])
+                                raise KeyError("asdf")
+
                         else:
                             signout_date.append(data["report"]["signoutDate"])
 
