@@ -46,9 +46,12 @@ def main(fname_sorted, fname_seq, ras, out_dir):
         bam_fname=fname_sorted, seq_fname=fname_seq, isoform_list=isoform_list
     )
     if out_dir is not None:
+        print(f"Creating output directory: {out_dir}")
         out_dir = Path(out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
+    print("Measuring distributions")
     isoforms.measure_distributions()
+    print("Fitting alignment model")
     isoforms.fit_alignment_model()
     print("Simming experiment")
     isoforms.simulate_experiment(max_iter=5)
