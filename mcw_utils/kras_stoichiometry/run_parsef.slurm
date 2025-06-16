@@ -13,7 +13,12 @@ module load samtools/1.20
 module list
 
 conda activate mcw_utils
-mkdir -p /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/parsef
-samtools sort /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/star_output/Aligned.toTranscriptome.out.bam > /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/star_output/Aligned.toTranscriptome.sorted.out.bam
-samtools index /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/star_output/Aligned.toTranscriptome.sorted.out.bam
-python measure_parsef.py --fname_sorted /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/star_output/Aligned.toTranscriptome.sorted.out.bam --fname_seq /scratch/g/tmcfall/rsem.seq --ras kras --out_dir /scratch/g/dseo/tempus_rna_seq_part3/TL-19-043DB3/parsef_output2
+if [ -e ./star_output/Aligned.toTranscriptome.out.bam.bai ]; then
+    echo "Sorted and indexed BAM file already exists"
+else
+    echo "Sorting and indexing star alignment file"
+    samtools sort ./star_output/Aligned.toTranscriptome.out.bam > ./star_output/Aligned.toTranscriptome.sorted.out.bam
+    samtools index ./star_output/Aligned.toTranscriptome.sorted.out.bam
+fi
+python /home/msochor/McFallLab/mcw_utils/kras_stoichiometry/measure_parsef.py --fname_sorted ./star_output/Aligned.toTranscriptome.sorted.out.bam --fname_seq /scratch/g/tmcfall/rsem.seq --ras kras --out_dir parsef_output
+python /home/msochor/McFallLab/mcw_utils/kras_stoichiometry/measure_parsef.py --fname_sorted ./star_output/Aligned.toTranscriptome.sorted.out.bam --fname_seq /scratch/g/tmcfall/rsem.seq --ras hras --out_dir parsef_output
