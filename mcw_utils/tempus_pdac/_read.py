@@ -163,6 +163,8 @@ def _read_tempus_files_in_directory(directory_path):
                         else:
                             msi.append(None)
                             variants.append("")
+                            tumor_mutational_burden.append(None)
+                            tumor_mutation_burden_percentile.append(None)
 
                         if has_kras_variant == False:
                             kras_variants.append("")
