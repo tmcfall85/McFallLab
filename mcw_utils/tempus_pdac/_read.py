@@ -38,6 +38,8 @@ def _read_tempus_files_in_directory(directory_path):
     specimen_block_id = []
     specimen_tumor_percentage = []
     signout_date = []
+    tumor_mutational_burden = []
+    tumor_mutation_burden_percentile = []
     for file_path in directory.iterdir():
         if file_path.is_dir():
             for inner_file_path in file_path.iterdir():
@@ -79,7 +81,12 @@ def _read_tempus_files_in_directory(directory_path):
                                         "status"
                                     ]
                                 )
-
+                            tumor_mutational_burden.append(
+                                data["results"]["tumorMutationalBurden"]
+                            )
+                            tumor_mutation_burden_percentile.append(
+                                data["results"]["tumorMutationBurdenPercentile"]
+                            )
                             mut_variants = []
                             mut_kras_variants = []
                             muts = data["results"][
@@ -201,6 +208,8 @@ def _read_tempus_files_in_directory(directory_path):
             "specimen_block_id": specimen_block_id,
             "specimen_tumor_percentage": specimen_tumor_percentage,
             "signout_date": signout_date,
+            "tumor_mutational_burden": tumor_mutational_burden,
+            "tumor_mutation_burden_percentile": tumor_mutation_burden_percentile,
         }
     )
 
