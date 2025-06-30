@@ -44,13 +44,12 @@ class Parsef(
             n = self.total_transcript_count
         split_transcripts = self.isoform_list[:-1]
         simulated_data = {isoform: [] for isoform in split_transcripts}
-        basic_range = np.arange(0, 0.9999999, 1 / max_iter)
+        basic_range = np.arange(1 / (2 * max_iter), 0.9999999, 1 / max_iter)
         distances = []
         for c in combinations(basic_range, len(self.isoform_list) - 1):
             distances.append(self._score_x(c, n))
-            for i in range(len(c)):
-                for j, t in enumerate(split_transcripts):
-                    simulated_data[t].append(self.splits[i][j])
+            for i, t in enumerate(split_transcripts):
+                simulated_data[t].append(c[i])
         simulated_data["distances"] = distances
         self.simulated_data = pd.DataFrame(simulated_data)
 
