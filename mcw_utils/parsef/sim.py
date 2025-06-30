@@ -70,9 +70,9 @@ class SimulateIsoform(Isoform):
         pred = pred_clf(self.clf, f1_score, f2_score, f1_gaps, f2_gaps)
         return pred
 
-    def _score_x(self, x, n):
+    def _score_x(self, split, n):
 
-        split = x_to_split(x)
+        # split = x_to_split(x)
         print(f"Eval split {split}")
         self.splits.append(split)
         isoform_counts = self._sim_isoform_counts(n, split)

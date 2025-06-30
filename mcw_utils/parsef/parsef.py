@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import pandas as pd
 import numpy as np
+from itertools import combinations
 
 import numpy as np
 from scipy.optimize import differential_evolution, Bounds
@@ -39,26 +40,16 @@ class Parsef(
 
     def simulate_experiment(self, n=None, max_iter=10):
         # Initial guess
-        x = [1 / (i + 1) for i in range(len(self.sequences))]
-        x0 = x[1:][::-1]
-        if n is None:
-            n = self.total_transcript_count
-
-        # Define bounds for each variable
-        bounds = Bounds(lb=[0] * len(x0), ub=[1] * len(x0))
-
-        # Using a sequence of tuples
-        objective_function = lambda x: self._score_x(x, n)
-
-        self.simulation_results = differential_evolution(
-            objective_function, bounds, x0=x0, maxiter=max_iter
-        )
         split_transcripts = self.isoform_list[:-1]
         simulated_data = {isoform: [] for isoform in split_transcripts}
-        for i in range(len(self.splits)):
-            for j, t in enumerate(split_transcripts):
-                simulated_data[t].append(self.splits[i][j])
-        simulated_data["distances"] = self.distances
+        basic_range = np.arange(0, 0.9999999, 1 / max_iter)
+        distances = []
+        for c in combinations(basic_range, len(self.isoform_list) - 1):
+            distances.append(self._score_x(c, n))
+            for i in range(len(c)):
+                for j, t in enumerate(split_transcripts):
+                    simulated_data[t].append(self.splits[i][j])
+        simulated_data["distances"] = distances
         self.simulated_data = pd.DataFrame(simulated_data)
 
     def save_simulated_data(self, fname):
