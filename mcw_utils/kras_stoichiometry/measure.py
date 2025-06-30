@@ -23,7 +23,8 @@ def get_reverse(seq):
 @dataclass
 class RNAseqRas:
     bam_dir: str
-    fnames: list[str] = field(default_factory=list)
+    bam_fnames: list[str] = field(default_factory=list)
+    rsem_fnames: list[str] = field(default_factory=list)
     accession_numbers: list[str] = field(default_factory=list)
     unknown_kras_count: list[int] = field(default_factory=list)
     wt_kras_count: list[int] = field(default_factory=list)
@@ -42,12 +43,32 @@ class RNAseqRas:
         for item in self.bam_dir.iterdir():
             if item.is_file():
                 if item.suffix == ".bam":
-                    self.fnames.append(item)
-                    self.accession_numbers.append(item.name.split("_align")[0])
+                    self.bam_fnames.append(item)
+                    self.accession_numbers.append(item.name.split("_alig")[0])
+                elif item.suffix == ".results":
+                    self.rsem_fnames.append(item)
+
+    def _read_kras_from_rsem(self, fname):
+        df = pd.read_csv(fname, sep="\t")
+        kras = "ENSG00000133703"
+        kras_df = df[df.gene_id.str.startswith(kras)]
+        return kras_df
+
+    def _read_hras_from_rsem(self, fname):
+        df = pd.read_csv(fname, sep="\t")
+        hras = "ENSG00000174775"
+        hras_df = df[df.gene_id.str.startswith(hras)]
+        return hras_df
+
+    def _read_nras_from_rsem(self, fname):
+        df = pd.read_csv(fname, sep="\t")
+        nras = "ENSG00000213281"
+        nras_df = df[df.gene_id.str.startswith(nras)]
+        return nras_df
 
     def measure(self):
         merged_data = pd.read_csv(self.bam_dir / "tempus_json_pdac_rcc_merged.csv")
-        for fname in self.fnames:
+        for fname in self.bam_fnames:
             if fname.with_suffix(".bam.bai").is_file() == False:
                 # Create index file
                 pysam.index(str(fname))
@@ -62,7 +83,7 @@ class RNAseqRas:
                 )
             else:
                 self._measure_kras_variant_stoichiometry(fname, "")
-        self.output_counts = pd.DataFrame(
+        star_df = pd.DataFrame(
             {
                 "accession_number": self.accession_numbers,
                 "unknown_kras_count": self.unknown_kras_count,
@@ -75,6 +96,46 @@ class RNAseqRas:
                 "kras_variants": self.kras_variants,
             }
         )
+
+        kras_dfs = []
+        accession_numbers = []
+        for fname in self.rsem_fnames:
+            accession_numbers.append(fname.name.split("_")[0])
+            kras_dfs.append(self._read_kras_from_rsem(fname))
+
+        kras_df = pd.concat(kras_dfs)
+        kras_df["accession_number"] = accession_numbers
+        print("kras")
+        print(kras_df.iloc[0])
+
+        hras_dfs = []
+        accession_numbers = []
+        for fname in self.rsem_fnames:
+            accession_numbers.append(fname.name.split("_")[0])
+            hras_dfs.append(self._read_hras_from_rsem(fname))
+
+        hras_df = pd.concat(hras_dfs)
+        hras_df["accession_number"] = accession_numbers
+        print("hras")
+        print(hras_df.iloc[0])
+
+        nras_dfs = []
+        accession_numbers = []
+        for fname in self.rsem_fnames:
+            accession_numbers.append(fname.name.split("_")[0])
+            nras_dfs.append(self._read_nras_from_rsem(fname))
+
+        nras_df = pd.concat(nras_dfs)
+        nras_df["accession_number"] = accession_numbers
+        print("nras")
+        print(nras_df.iloc[0])
+
+        ras_df = kras_df.merge(hras_df, on="accession_number", suffixes=("_kras", ""))
+        ras_df = ras_df.merge(
+            nras_df, on="accession_number", suffixes=("_hras", "_nras")
+        )
+
+        self.output_counts = star_df.merge(ras_df, on="accession_number")
 
     def _measure_kras_variant_stoichiometry(self, fname: str, kras_variants: str):
         print(f"Measuring kras {kras_variants} stoichiometry in: {fname}")
@@ -161,13 +222,21 @@ class RNAseqRas:
                     ):
                         if ap[0] is not None:
                             if read.is_forward:
-                                codon.append(
-                                    get_reverse(str(read.get_forward_sequence()))[ap[0]]
-                                )
+                                try:
+                                    codon.append(
+                                        get_reverse(str(read.get_forward_sequence()))[
+                                            ap[0]
+                                        ]
+                                    )
+                                except IndexError:
+                                    codon.append("?")
                             else:
-                                codon.append(
-                                    str(read.get_forward_sequence())[::-1][ap[0]]
-                                )
+                                try:
+                                    codon.append(
+                                        str(read.get_forward_sequence())[::-1][ap[0]]
+                                    )
+                                except IndexError:
+                                    codon.append("?")
                         else:
                             codon.append("?")
 
