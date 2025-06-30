@@ -1,9 +1,10 @@
 #!/bin/bash
 #SBATCH --job-name=measure-ras-freq
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=4
 #SBATCH --time=08:00:00
 #SBATCH --output=%x-%j.out
+#SBATCH --partition=bigmem
 #SBATCH --account=dseo
 
 module load python/3.9.1
