@@ -40,6 +40,8 @@ class Parsef(
 
     def simulate_experiment(self, n=None, max_iter=10):
         # Initial guess
+        if n is None:
+            n = self.total_transcript_count
         split_transcripts = self.isoform_list[:-1]
         simulated_data = {isoform: [] for isoform in split_transcripts}
         basic_range = np.arange(0, 0.9999999, 1 / max_iter)
