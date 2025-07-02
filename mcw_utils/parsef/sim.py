@@ -114,6 +114,6 @@ class SimulateIsoform(Isoform):
             simulated_rna_seq_vector - self.normalized_rna_seq_vector
         )
         print(f"Distance: {distance}")
-        print(f"Cache: {local_align.cache_info()}")
+        # print(f"Cache: {local_align.cache_info()}")
         self.distances.append(distance)
         return distance
