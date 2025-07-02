@@ -14,7 +14,7 @@ aligner.open_gap_score = -5
 aligner.extend_gap_score = -2
 
 
-@cached
+# @cached
 def local_align(ref_seq, frag):
     l = aligner.align(ref_seq, frag)
 
