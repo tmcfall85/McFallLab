@@ -16,7 +16,13 @@ aligner.extend_gap_score = -2
 
 @cached
 def local_align(ref_seq, frag):
-    return aligner.align(ref_seq, frag)
+    l = aligner.align(ref_seq, frag)
+
+    score = l[0].score
+    match = l[0].sequences[0][l[0].indices[0][0] : l[0].indices[0][-1]]
+    gaps = len(match.split("-")) - 1
+
+    return score, gaps
 
 
 def pred_clf(clf, f1_score, f2_score, f1_gaps, f2_gaps):
