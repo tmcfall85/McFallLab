@@ -13,18 +13,19 @@ def main(fname_sorted, fname_seq, ras, out_dir):
             "ENST00000557334.5",
         ]
     elif ras == "hras":
-        isoform_list = [  #'ENST00000311189.7',
-            #'ENST00000397594.5',
-            #'ENST00000397596.6',
+        isoform_list = [
+            "ENST00000311189.7",
+            "ENST00000397594.5",
+            "ENST00000397596.6",
             #'ENST00000493230.5',
-            "ENST00000451590.5",
-            "ENST00000417302.5",
-            "ENST00000462734.1",
-            "ENST00000468682.2",
-            "ENST00000478324.5",
+            # "ENST00000451590.5",
+            # "ENST00000417302.5",
+            # "ENST00000462734.1",
+            # "ENST00000468682.2",
+            # "ENST00000478324.5",
             "ENST00000479482.1",
             #'ENST00000482021.1',
-            "ENST00000369535.4",
+            # "ENST00000369535.4",
         ]
     else:
         raise ValueError("Unsupported RAS type. Use 'kras' or 'hras'.")
@@ -40,7 +41,7 @@ def main(fname_sorted, fname_seq, ras, out_dir):
     print("Fitting alignment model")
     isoforms.fit_alignment_model()
     print("Simming experiment")
-    isoforms.simulate_experiment(max_iter=5)
+    isoforms.simulate_experiment(max_iter=20)
     print("saving simulated data")
     isoforms.save_simulated_data(out_dir / f"{ras}_rsem_simulated_data.csv")
     pd.DataFrame(

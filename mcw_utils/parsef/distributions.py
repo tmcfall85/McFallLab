@@ -62,5 +62,6 @@ class Distribution(Isoform):
             self.effective_lengths[isoform] = max(right_start) - min(left_start)
             self.min_sequences[isoform] = self.sequences[isoform][
                 min(left_start) : max(right_start)
+                + int(np.ceil(self.length_distribution.ppf(1)))
             ]
             self.max_skip_prob[isoform] = max(p)
