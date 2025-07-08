@@ -41,14 +41,14 @@ class Distribution(Isoform):
                     "Please check the input BAM file."
                 )
 
-            ls_hist = np.histogram(left_start)
+            ls_hist = np.histogram(left_start, bins="auto")
 
             ls_hist_dist = rv_histogram(ls_hist, density=False)
 
-            rs_hist = np.histogram(right_start)
+            rs_hist = np.histogram(right_start, bins="auto")
             rs_hist_dist = rv_histogram(rs_hist, density=False)
 
-            sk_hist = np.histogram(skips)
+            sk_hist = np.histogram(skips, bins="auto")
             sk_hist_dist = rv_histogram(sk_hist, density=False)
 
             self.left_start_distributions[isoform] = ls_hist_dist
