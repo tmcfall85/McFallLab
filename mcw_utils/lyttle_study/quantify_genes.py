@@ -15,6 +15,7 @@ def main(folder_path):
     ICAM1 = "ENSG00000090339"
     SPARC = "ENSG00000113140"
     TIMP1 = "ENSG00000102265"
+    NOX5 = "ENSG00000255346"
 
     # down
     BGLAP = "ENSG00000242252"
@@ -49,6 +50,7 @@ def main(folder_path):
         "ICAM1": ICAM1,
         "SPARC": SPARC,
         "TIMP1": TIMP1,
+        "NOX5": NOX5,
     }
 
     down = {
