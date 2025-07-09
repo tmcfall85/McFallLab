@@ -74,9 +74,9 @@ class Distribution(Isoform):
                 if transcript.is_forward:
                     ref_pos = int(transcript.to_dict()["ref_pos"]) - 1
                     next_ref_pos = int(transcript.to_dict()["next_ref_pos"]) - 1
-                    for i in range(int(ref_weights[isoform][ref_pos])):
+                    for i in range(int(ref_weights[isoform][ref_pos - 1])):
                         left_start.append(ref_pos)
-                    for i in range(int(ref_weights[isoform][next_ref_pos])):
+                    for i in range(int(ref_weights[isoform][next_ref_pos - 1])):
                         right_start.append(next_ref_pos)
                     skips.append(right_start[-1] - left_start[-1])
 
