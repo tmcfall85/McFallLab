@@ -38,7 +38,7 @@ class Distribution(Isoform):
 
             self.min_sequences[isoform] = self.sequences[isoform][
                 min(left_start) : max(right_start)
-                + int(np.ceil(self.length_distribution.ppf(1)))
+                + 2 * int(np.ceil(self.length_distribution.ppf(1)))
             ]
         aligner = PairwiseAligner()
         aligner.mode = "local"
@@ -74,16 +74,10 @@ class Distribution(Isoform):
                 if transcript.is_forward:
                     ref_pos = int(transcript.to_dict()["ref_pos"]) - 1
                     next_ref_pos = int(transcript.to_dict()["next_ref_pos"]) - 1
-                    try:
-                        for i in range(int(ref_weights[isoform][ref_pos])):
-                            left_start.append(ref_pos)
-                        for i in range(int(ref_weights[isoform][next_ref_pos])):
-                            right_start.append(next_ref_pos)
-                    except:
-                        print(self.effective_lengths)
-                        print(len(self.min_sequences[isoform]))
-                        print(isoform)
-                        print(ref_pos, next_ref_pos)
+                    for i in range(int(ref_weights[isoform][ref_pos])):
+                        left_start.append(ref_pos)
+                    for i in range(int(ref_weights[isoform][next_ref_pos])):
+                        right_start.append(next_ref_pos)
 
                     skips.append(right_start[-1] - left_start[-1])
 
