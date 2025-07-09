@@ -64,6 +64,52 @@ class SimulateIsoform(Isoform):
         pred = pred_clf(self.clf, f1_score, f2_score, f1_gaps, f2_gaps)
         return pred
 
+    def _score_original(self):
+        transcript_dfs = {}
+        all_names = []
+        names = []
+        ori = []
+        seq = []
+        for isoform in self.isoform_list:
+            for read in self.transcripts[isoform]:
+                names.append(read.to_dict()["name"])
+                ori.append(read.is_forward)
+                seq.append(read.seq)
+
+        transcript_dfs = pd.DataFrame(
+            {"names": names, "ori": ori, "seq": seq, "count": 1}
+        )
+        unique_transcript_dfs = (
+            transcript_dfs.groupby(["names", "ori", "seq"]).count().reset_index()
+        )
+        name_list = list(set(unique_transcript_dfs.names))
+
+        scores = {isoform: [] for isoform in self.isoform_list}
+        for name in name_list:
+            mini_df = unique_transcript_dfs[unique_transcript_dfs.names == name]
+            if len(mini_df) == 2:
+                for_frag = mini_df[mini_df.ori == True].iloc[0].seq
+                rev_frag = mini_df[mini_df.ori == False].iloc[0].seq
+                for isoform in self.isoform_list:
+                    scores[isoform].append(
+                        self._score_frags(
+                            self.min_sequences[isoform], for_frag, rev_frag
+                        )
+                    )
+        scores_df = pd.DataFrame(scores)
+
+        scores_df["norm"] = scores_df.sum(axis=1)
+        norm_isoforms = []
+        for isoform in self.isoform_list:
+            scores_df[f"{isoform}_norm"] = scores_df[isoform] / scores_df.norm
+            norm_isoforms.append(f"{isoform}_norm")
+
+        original_rna_seq_vector = np.array(scores_df[norm_isoforms].sum().values)
+        original_rna_seq_vector /= original_rna_seq_vector.sum()
+        print(f"Original RNA seq vector: {self.normalized_rna_seq_vector}")
+        self.normalized_rna_seq_vector = original_rna_seq_vector
+        print(f"Modeled RNA seq vector: {self.normalized_rna_seq_vector}")
+
     def _score_x(self, split, n):
 
         # split = x_to_split(x)

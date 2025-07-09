@@ -40,6 +40,7 @@ class Parsef(
 
     def simulate_experiment(self, n=None, max_iter=10):
         # Initial guess
+        self._score_original()
         if n is None:
             n = self.total_transcript_count
         split_transcripts = self.isoform_list[:-1]
