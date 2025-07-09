@@ -81,6 +81,7 @@ class Distribution(Isoform):
                             right_start.append(next_ref_pos)
                     except:
                         print(self.effective_lengths)
+                        print(len(self.min_sequences[isoform]))
                         print(isoform)
                         print(ref_pos, next_ref_pos)
 
