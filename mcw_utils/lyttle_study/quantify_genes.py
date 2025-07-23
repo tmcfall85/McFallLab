@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+from datetime import date
 
 
 def init_data(gene_dict, data):
@@ -176,7 +177,7 @@ def main(folder_path):
                             data = pull_tpm(tommy, dfi, data)
 
     df = pd.DataFrame(data)
-    df.to_csv("gene_expression_results.csv", index=False)
+    df.to_csv(f"gene_expression_results_{date.today()}.csv", index=False)
     print("Gene expression results saved to gene_expression_results.csv")
 
 
