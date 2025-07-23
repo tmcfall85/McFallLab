@@ -177,8 +177,9 @@ def main(folder_path):
                             data = pull_tpm(tommy, dfi, data)
 
     df = pd.DataFrame(data)
-    df.to_csv(f"gene_expression_results_{date.today()}.csv", index=False)
-    print("Gene expression results saved to gene_expression_results.csv")
+    fname = f"gene_expression_results_{date.today()}.csv"
+    df.to_csv(fname, index=False)
+    print(f"Gene expression results saved to {fname}")
 
 
 if __name__ == "__main__":
