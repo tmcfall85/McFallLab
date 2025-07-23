@@ -76,6 +76,11 @@ def main(folder_path):
     ADRB2 = "ENSG00000169252"
     ADRB3 = "ENSG00000188778"
 
+    # Tommy Lab
+    KRAS = "ENSG00000133703.11"
+    HRAS = "ENSG00000174775.16"
+    NRAS = "ENSG00000213281.4"
+
     up = {
         "TPO": TPO,
         "MMP1": MMP1,
@@ -135,6 +140,12 @@ def main(folder_path):
         "ADRB3": ADRB3,
     }
 
+    tommy = {
+        "KRAS": KRAS,
+        "HRAS": HRAS,
+        "NRAS": NRAS,
+    }
+
     data = {}
     data["accession_id"] = []
     data = init_data(up, data)
@@ -142,6 +153,7 @@ def main(folder_path):
     data = init_data(housekeeping, data)
     data = init_data(sweeny, data)
     data = init_data(adriano, data)
+    data = init_data(tommy, data)
 
     search_dir = Path(folder_path)
     rsem_name = "Aligned.toTranscriptome.out_rsem.genes.results"
@@ -161,6 +173,7 @@ def main(folder_path):
                             data = pull_tpm(housekeeping, dfi, data)
                             data = pull_tpm(sweeny, dfi, data)
                             data = pull_tpm(adriano, dfi, data)
+                            data = pull_tpm(tommy, dfi, data)
 
     df = pd.DataFrame(data)
     df.to_csv("gene_expression_results.csv", index=False)
