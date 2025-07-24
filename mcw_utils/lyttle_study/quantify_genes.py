@@ -61,6 +61,7 @@ def main(folder_path):
     NOX5 = "ENSG00000255346"
     NOX4 = "ENSG00000086991"
     NOX3 = "ENSG00000074771"
+    CYBB = "ENSG00000165168"
     NOX1 = "ENSG00000007952"
 
     # Adriano Lab
@@ -123,6 +124,7 @@ def main(folder_path):
         "NOX5": NOX5,
         "NOX4": NOX4,
         "NOX3": NOX3,
+        "CYBB": CYBB,  # CYBB is an alias for NOX2
         "NOX1": NOX1,
     }
 
