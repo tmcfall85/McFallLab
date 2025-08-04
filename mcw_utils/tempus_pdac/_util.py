@@ -158,10 +158,21 @@ def make_tall_variants(df):
         if isinstance(df.iloc[i].variants, str) and not df.iloc[i].variants == "":
             variants = df.iloc[i].variants.split("|")
             for variant in variants:
-                gene, mut, source, comment = variant.split(":")
+                gene, mut, source, comment, allelic_fraction = variant.split(":")
                 tall.append(
                     pd.concat(
-                        [df.iloc[i][c], pd.Series({"gene": gene, "variant": mut, "source": source, "comment": comment})]
+                        [
+                            df.iloc[i][c],
+                            pd.Series(
+                                {
+                                    "gene": gene,
+                                    "variant": mut,
+                                    "source": source,
+                                    "comment": comment,
+                                    "allelic_fraction": allelic_fraction,
+                                }
+                            ),
+                        ]
                     )
                 )
     return pd.concat(tall, axis=1).T

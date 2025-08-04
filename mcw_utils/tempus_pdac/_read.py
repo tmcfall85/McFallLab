@@ -35,6 +35,7 @@ def _read_tempus_files_in_directory(directory_path):
     specimen_count = []
     specimen_sample_category = []
     specimen_sample_site = []
+    specimen_date = []
     specimen_block_id = []
     specimen_tumor_percentage = []
     signout_date = []
@@ -102,7 +103,7 @@ def _read_tempus_files_in_directory(directory_path):
 
                                 for variant in mut["variants"]:
                                     mut_variants.append(
-                                        f'{mut["gene"]}:{variant["mutationEffect"]}:somatic:potentially_actionable'
+                                        f'{mut["gene"]}:{variant["mutationEffect"]}:somatic:potentially_actionable:{variant["allelicFraction"]}'
                                     )
 
                             muts = data["results"][
@@ -114,7 +115,7 @@ def _read_tempus_files_in_directory(directory_path):
                                     mut_kras_variants.append(mut["mutationEffect"])
                                     has_kras_variant = True
                                 mut_variants.append(
-                                    f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:biologically_relevant'
+                                    f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:biologically_relevant:{mut["allelicFraction"]}'
                                 )
 
                             muts = data["results"][
@@ -125,13 +126,13 @@ def _read_tempus_files_in_directory(directory_path):
                                     mut_kras_variants.append(mut["mutationEffect"])
                                     has_kras_variant = True
                                 mut_variants.append(
-                                    f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:unknown_significance'
+                                    f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:unknown_significance:{mut["allelicFraction"]}'
                                 )
 
                             muts = data["results"]["fusionVariants"]
                             for mut in muts:
                                 mut_variants.append(
-                                    f'gene5={mut["gene5"]}-gene3={mut["gene3"]}:{mut["variantDescription"]}:fusion:unknown_significance'
+                                    f'gene5={mut["gene5"]}-gene3={mut["gene3"]}:{mut["variantDescription"]}:fusion:unknown_significance:'
                                 )
 
                             muts = data["results"]["inheritedRelevantVariants"][
@@ -141,8 +142,12 @@ def _read_tempus_files_in_directory(directory_path):
                                 if mut["gene"] == "KRAS":
                                     mut_kras_variants.append(mut["mutationEffect"])
                                     has_kras_variant = True
+                                if "allelicFraction" in mut.keys():
+                                    allelic_fraction = mut["allelicFraction"]
+                                else:
+                                    allelic_fraction = ""
                                 mut_variants.append(
-                                    f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:biologically_relevant'
+                                    f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:biologically_relevant:{allelic_fraction}'
                                 )
 
                             muts = data["results"][
@@ -153,11 +158,10 @@ def _read_tempus_files_in_directory(directory_path):
                                     mut_kras_variants.append(mut["mutationEffect"])
                                     has_kras_variant = True
                                 mut_variants.append(
-                                    f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:unknown_significance'
+                                    f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:unknown_significance:{mut["allelicFraction"]}'
                                 )
-
                             if len(mut_variants) == 0:
-                                mut_variants.append("none:none:none:none")
+                                mut_variants.append("none:none:none:none:none")
                             variants.append("|".join(mut_variants))
 
                         else:
@@ -178,16 +182,37 @@ def _read_tempus_files_in_directory(directory_path):
                         tempus_id.append(data["patient"]["tempusId"])
                         test_code.append(data["order"]["test"]["code"])
                         specimen_count.append(len(data["specimens"]))
-                        specimen_sample_category.append(
-                            data["specimens"][0]["sampleCategory"]
-                        )
-                        specimen_sample_site.append(data["specimens"][0]["sampleSite"])
-                        specimen_block_id.append(
-                            data["specimens"][0]["institutionData"]["blockId"]
-                        )
-                        specimen_tumor_percentage.append(
-                            data["specimens"][0]["institutionData"]["tumorPercentage"]
-                        )
+                        has_tumor_specimen = False
+                        for specimen in data["specimens"]:
+                            if specimen["sampleCategory"] == "tumor":
+                                has_tumor_specimen = True
+                                specimen_sample_category.append(
+                                    specimen["sampleCategory"]
+                                )
+                                specimen_sample_site.append(specimen["sampleSite"])
+                                specimen_date.append(specimen["collectionDate"])
+                                specimen_block_id.append(
+                                    specimen["institutionData"]["blockId"]
+                                )
+                                specimen_tumor_percentage.append(
+                                    specimen["institutionData"]["tumorPercentage"]
+                                )
+                        if has_tumor_specimen == False:
+                            specimen_sample_category.append(
+                                data["specimens"][0]["sampleCategory"]
+                            )
+                            specimen_sample_site.append(
+                                data["specimens"][0]["sampleSite"]
+                            )
+                            specimen_date.append(data["specimens"][0]["collectionDate"])
+                            specimen_block_id.append(
+                                data["specimens"][0]["institutionData"]["blockId"]
+                            )
+                            specimen_tumor_percentage.append(
+                                data["specimens"][0]["institutionData"][
+                                    "tumorPercentage"
+                                ]
+                            )
 
     df = pd.DataFrame(
         {
@@ -207,6 +232,7 @@ def _read_tempus_files_in_directory(directory_path):
             "specimen_count": specimen_count,
             "specimen_sample_category": specimen_sample_category,
             "specimen_sample_site": specimen_sample_site,
+            "specimen_date": specimen_date,
             "specimen_block_id": specimen_block_id,
             "specimen_tumor_percentage": specimen_tumor_percentage,
             "signout_date": signout_date,
