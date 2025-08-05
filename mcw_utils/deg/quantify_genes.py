@@ -24,7 +24,7 @@ def main(folder_path):
                             data["accession_id"].append(acc_num)
 
                             if needs_init:
-                                genes = list(set(dfi.gene_id))
+                                genes = list(set(dfi.gene_id))[:10]
                                 for gene in genes:
                                     data[gene] = []
                                 needs_init = False
