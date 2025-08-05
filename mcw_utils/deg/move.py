@@ -41,6 +41,11 @@ if __name__ == "__main__":
         type=str,
         help="Path to the folder containing subfolders with RSEM output.",
     )
+    parser.add_argument(
+        "output_folder_path",
+        type=str,
+        help="Path to the folder where output files will be saved.",
+    )
 
     args = parser.parse_args()
-    main(args.folder_path)
+    main(args.folder_path, args.output_folder_path)
