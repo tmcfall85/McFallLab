@@ -2,14 +2,13 @@ import pandas as pd
 from pathlib import Path
 from datetime import date
 import shutil
+import os
 
 
 def main(folder_path, output_folder_path):
 
     data = {}
     data["accession_id"] = []
-    needs_init = True
-    genes = []
     search_dir = Path(folder_path)
     rsem_name = "Aligned.toTranscriptome.out_rsem.genes.results"
     for acc_dir in search_dir.iterdir():
@@ -20,12 +19,11 @@ def main(folder_path, output_folder_path):
                     for fname in sub_folder.iterdir():
                         if fname.is_file() and fname.name == rsem_name:
                             print("File to be processed:", fname)
-                            dest_file = (
-                                Path(output_folder_path)
-                                / acc_num
-                                / sub_folder.name
-                                / fname.name
+                            dest_path = (
+                                Path(output_folder_path) / acc_num / sub_folder.name
                             )
+                            dest_path.mkdir(parents=True, exist_ok=True)
+                            dest_file = dest_path / fname.name
                             shutil.copy(str(fname), str(dest_file))
                             print("File copied to:", dest_file)
 
