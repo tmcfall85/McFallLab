@@ -19,15 +19,17 @@ def main(folder_path):
                             print("File to be processed:", fname)
 
                             dfi = pd.read_csv(fname, sep="\t")
+                            dfi = dfi[dfi.gene_id.str.startswith("ENSG0")]
                             dfi_t = dfi.set_index("gene_id")[["FPKM", "TPM"]].T
                             dfi_t["accession_id"] = acc_num
                             data.append(dfi_t)
 
     df = pd.concat(data).reset_index()
-    # df = df[df.index == "TPM"]
-    # df.drop(columns=["index"], inplace=True)
-    # df.fillna(0, inplace=True)
-    # df.set_index("accession_id", inplace=True)
+    df = df[df["index"] == "TPM"]
+    df.drop(columns=["index"], inplace=True)
+    df.fillna(0, inplace=True)
+    df.set_index("accession_id", inplace=True)
+    df.drop(columns=["Unnamed: 0"], inplace=True)
     out_file = f"deg_gene_expression_results_{date.today()}.csv"
     df.to_csv(out_file)
     print(f"Gene expression results saved to {out_file}")
