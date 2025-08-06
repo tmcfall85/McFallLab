@@ -5,10 +5,8 @@ from datetime import date
 
 def main(folder_path):
 
-    data = {}
-    data["accession_id"] = []
+    data = []
     needs_init = True
-    genes = []
     search_dir = Path(folder_path)
     rsem_name = "Aligned.toTranscriptome.out_rsem.genes.results"
     for acc_dir in search_dir.iterdir():
@@ -21,22 +19,11 @@ def main(folder_path):
                             print("File to be processed:", fname)
 
                             dfi = pd.read_csv(fname, sep="\t")
-                            data["accession_id"].append(acc_num)
+                            dfi["accession_id"] = acc_num
+                            data.append(dfi[["accession_id", "TPM"]].T)
 
-                            if needs_init:
-                                genes = list(set(dfi.gene_id))
-                                for gene in genes:
-                                    data[gene] = []
-                                needs_init = False
-
-                            for gene in genes:
-                                gene_results = dfi[dfi.gene_id.str.startswith(gene)]
-                                if len(gene_results) > 0:
-                                    data[gene].append(gene_results.iloc[0].TPM)
-                                else:
-                                    data[gene].append(0)
-
-    df = pd.DataFrame(data)
+    df = pd.concat(data)
+    df.fillna(0, inplace=True)
     out_file = f"deg_gene_expression_results_{date.today()}.csv"
     df.to_csv(out_file, index=False)
     print(f"Gene expression results saved to {out_file}")
