@@ -29,7 +29,6 @@ def main(folder_path):
     df.drop(columns=["index"], inplace=True)
     df.fillna(0, inplace=True)
     df.set_index("accession_id", inplace=True)
-    df.drop(columns=["Unnamed: 0"], inplace=True)
     out_file = f"deg_gene_expression_results_{date.today()}.csv"
     df.to_csv(out_file)
     print(f"Gene expression results saved to {out_file}")
