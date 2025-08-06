@@ -20,8 +20,14 @@ def main(deg_file, dta_file, merge_file):
     deg_with_pfs = deg_with_mrn.merge(
         dta_df[["mrn", "recurrence_time_sur"]], on="mrn", how="left"
     )
+    deg_with_pfs.drop(columns=["mrn", "emrn", "emr_id"], inplace=True)
     print("Distribution of recurrence_time_sur:")
     print(deg_with_pfs.groupby("recurrence_time_sur").accession_id.count())
+    deg_with_pfs_early_late = deg_with_pfs[
+        deg_with_pfs.recurrence_time_sur.isin(["early", "late"])
+    ]
+    deg_with_pfs_early_late.set_index("accession_id", inplace=True)
+
     return
 
 
