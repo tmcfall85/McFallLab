@@ -19,9 +19,7 @@ def main(folder_path):
                             print("File to be processed:", fname)
 
                             dfi = pd.read_csv(fname, sep="\t")
-                            print(dfi.iloc[0])
-                            # dfi["accession_id"] = acc_num
-                            dfi_t = dfi.set_index("gene_id")[["FKPM", "TPM"]].T
+                            dfi_t = dfi.set_index("gene_id")[["FPKM", "TPM"]].T
                             dfi_t["accession_id"] = acc_num
                             data.append(dfi_t)
 
