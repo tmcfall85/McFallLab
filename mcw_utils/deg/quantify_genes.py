@@ -24,10 +24,10 @@ def main(folder_path):
                             data.append(dfi_t)
 
     df = pd.concat(data).reset_index()
-    df = df[df.index == "TPM"]
-    df.drop(columns=["index"], inplace=True)
-    df.fillna(0, inplace=True)
-    df.set_index("accession_id", inplace=True)
+    # df = df[df.index == "TPM"]
+    # df.drop(columns=["index"], inplace=True)
+    # df.fillna(0, inplace=True)
+    # df.set_index("accession_id", inplace=True)
     out_file = f"deg_gene_expression_results_{date.today()}.csv"
     df.to_csv(out_file)
     print(f"Gene expression results saved to {out_file}")
