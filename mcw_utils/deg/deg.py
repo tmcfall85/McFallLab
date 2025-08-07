@@ -74,7 +74,8 @@ def run_deseq2(deg_with_pfs, out_file, a_label="early", b_label="late"):
     deg_with_pfs_ab.set_index("accession_id", inplace=True)
 
     metadata = deg_with_pfs_ab[["recurrence_time_sur", "emr_id"]].copy()
-    metadata["condition"] = metadata.apply(condition, axis=1)
+    a_condition = lambda row: condition(row, a_label)
+    metadata["condition"] = metadata.apply(a_condition, axis=1)
     metadata.drop(columns=["emr_id"], inplace=True)
 
     deg_with_pfs_ab.drop(columns=["recurrence_time_sur", "emr_id"], inplace=True)
