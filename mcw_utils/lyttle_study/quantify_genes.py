@@ -1,5 +1,25 @@
 import pandas as pd
 from pathlib import Path
+from datetime import date
+
+
+def init_data(gene_dict, data):
+    for gene in gene_dict.keys():
+        col_name = f"{gene}_TPM"
+        data[col_name] = []
+    return data
+
+
+def pull_tpm(gene_dict, dfi, data):
+    for gene in gene_dict.keys():
+        gene_results = dfi[dfi.gene_id.str.startswith(gene_dict[gene])]
+        col_name = f"{gene}_TPM"
+        if len(gene_results) > 0:
+
+            data[col_name].append(gene_results.iloc[0].TPM)
+        else:
+            data[col_name].append(0)
+    return data
 
 
 def main(folder_path):
@@ -36,6 +56,32 @@ def main(folder_path):
     PPIA = "ENSG00000196262"
     RPL13A = "ENSG00000142541"
     RLA0 = "ENSG00000089157"
+
+    # Sweeny lab
+    NOX5 = "ENSG00000255346"
+    NOX4 = "ENSG00000086991"
+    NOX3 = "ENSG00000074771"
+    CYBB = "ENSG00000165168"
+    NOX1 = "ENSG00000007952"
+
+    # Adriano Lab
+    ARRB1 = "ENSG00000137486"
+    ARRB2 = "ENSG00000141480"
+    ARBK1 = "ENSG00000173020"
+    GRK4 = "ENSG00000125388"
+    GRK1 = "ENSG00000288263"
+    GRK5 = "ENSG00000198873"
+    ARBK2 = "ENSG00000100077"
+    GRK6 = "ENSG00000198055"
+    GRK7 = "ENSG00000114124"
+    ADRB1 = "ENSG00000043591"
+    ADRB2 = "ENSG00000169252"
+    ADRB3 = "ENSG00000188778"
+
+    # Tommy Lab
+    KRAS = "ENSG00000133703.11"
+    HRAS = "ENSG00000174775.16"
+    NRAS = "ENSG00000213281.4"
 
     up = {
         "TPO": TPO,
@@ -74,17 +120,44 @@ def main(folder_path):
         "RLA0": RLA0,
     }
 
+    sweeny = {
+        "NOX5": NOX5,
+        "NOX4": NOX4,
+        "NOX3": NOX3,
+        "CYBB": CYBB,  # CYBB is an alias for NOX2
+        "NOX1": NOX1,
+    }
+
+    adriano = {
+        "ARRB1": ARRB1,
+        "ARRB2": ARRB2,
+        "ARBK1": ARBK1,
+        "GRK4": GRK4,
+        "GRK1": GRK1,
+        "GRK5": GRK5,
+        "ARBK2": ARBK2,
+        "GRK6": GRK6,
+        "GRK7": GRK7,
+        "ADRB1": ADRB1,
+        "ADRB2": ADRB2,
+        "ADRB3": ADRB3,
+    }
+
+    tommy = {
+        "KRAS": KRAS,
+        "HRAS": HRAS,
+        "NRAS": NRAS,
+    }
+
     data = {}
     data["accession_id"] = []
-    for gene in up.keys():
-        col_name = f"{gene}_TPM"
-        data[col_name] = []
-    for gene in down.keys():
-        col_name = f"{gene}_TPM"
-        data[col_name] = []
-    for gene in housekeeping.keys():
-        col_name = f"{gene}_TPM"
-        data[col_name] = []
+    data = init_data(up, data)
+    data = init_data(down, data)
+    data = init_data(housekeeping, data)
+    data = init_data(sweeny, data)
+    data = init_data(adriano, data)
+    data = init_data(tommy, data)
+
     search_dir = Path(folder_path)
     rsem_name = "Aligned.toTranscriptome.out_rsem.genes.results"
     for acc_dir in search_dir.iterdir():
@@ -98,41 +171,17 @@ def main(folder_path):
 
                             dfi = pd.read_csv(fname, sep="\t")
                             data["accession_id"].append(acc_num)
-
-                            for gene in up.keys():
-                                gene_results = dfi[dfi.gene_id.str.startswith(up[gene])]
-                                col_name = f"{gene}_TPM"
-                                if len(gene_results) > 0:
-
-                                    data[col_name].append(gene_results.iloc[0].TPM)
-                                else:
-                                    data[col_name].append(0)
-
-                            for gene in down.keys():
-                                gene_results = dfi[
-                                    dfi.gene_id.str.startswith(down[gene])
-                                ]
-                                col_name = f"{gene}_TPM"
-                                if len(gene_results) > 0:
-
-                                    data[col_name].append(gene_results.iloc[0].TPM)
-                                else:
-                                    data[col_name].append(0)
-
-                            for gene in housekeeping.keys():
-                                gene_results = dfi[
-                                    dfi.gene_id.str.startswith(housekeeping[gene])
-                                ]
-                                col_name = f"{gene}_TPM"
-                                if len(gene_results) > 0:
-
-                                    data[col_name].append(gene_results.iloc[0].TPM)
-                                else:
-                                    data[col_name].append(0)
+                            data = pull_tpm(up, dfi, data)
+                            data = pull_tpm(down, dfi, data)
+                            data = pull_tpm(housekeeping, dfi, data)
+                            data = pull_tpm(sweeny, dfi, data)
+                            data = pull_tpm(adriano, dfi, data)
+                            data = pull_tpm(tommy, dfi, data)
 
     df = pd.DataFrame(data)
-    df.to_csv("gene_expression_results.csv", index=False)
-    print("Gene expression results saved to gene_expression_results.csv")
+    fname = f"gene_expression_results_{date.today()}.csv"
+    df.to_csv(fname, index=False)
+    print(f"Gene expression results saved to {fname}")
 
 
 if __name__ == "__main__":
