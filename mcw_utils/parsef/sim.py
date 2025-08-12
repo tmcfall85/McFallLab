@@ -57,15 +57,9 @@ class SimulateIsoform(Isoform):
         )
 
     def _score_frags(self, ref_seq, f1, f2):
-        l = local_align(ref_seq, f1)
-        f1_score = l[0].score
-        for_match = l[0].sequences[0][l[0].indices[0][0] : l[0].indices[0][-1]]
-        f1_gaps = len(for_match.split("-")) - 1
+        f1_score, f1_gaps = local_align(ref_seq, f1)
 
-        l = local_align(ref_seq, f2)
-        f2_score = l[0].score
-        rev_match = l[0].sequences[0][l[0].indices[0][0] : l[0].indices[0][-1]]
-        f2_gaps = len(rev_match.split("-")) - 1
+        f2_score, f2_gaps = local_align(ref_seq, f2)
 
         pred = pred_clf(self.clf, f1_score, f2_score, f1_gaps, f2_gaps)
         return pred
@@ -120,5 +114,6 @@ class SimulateIsoform(Isoform):
             simulated_rna_seq_vector - self.normalized_rna_seq_vector
         )
         print(f"Distance: {distance}")
+        print(f"Cache: {local_align.cache_info()}")
         self.distances.append(distance)
         return distance

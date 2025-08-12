@@ -85,15 +85,12 @@ class ModelAlignment(Isoform):
             for_gaps = []
             rev_gaps = []
             for isoform in self.isoform_list:
-                l = local_align(for_seq, self.min_sequences[isoform])
-                for_scores.append(l[0].score)
-                for_match = l[0].sequences[0][l[0].indices[0][0] : l[0].indices[0][-1]]
-                for_gaps.append(len(for_match.split("-")) - 1)
-
-                l = local_align(rev_seq, self.min_sequences[isoform])
-                rev_scores.append(l[0].score)
-                rev_match = l[0].sequences[0][l[0].indices[0][0] : l[0].indices[0][-1]]
-                rev_gaps.append(len(rev_match.split("-")) - 1)
+                for_score, for_gap = local_align(for_seq, self.min_sequences[isoform])
+                rev_score, rev_gap = local_align(rev_seq, self.min_sequences[isoform])
+                for_scores.append(for_score)
+                rev_scores.append(rev_score)
+                for_gaps.append(for_gap)
+                rev_gaps.append(rev_gap)
 
             inside_df = pd.DataFrame(
                 {
