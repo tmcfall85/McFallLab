@@ -13,147 +13,185 @@ def cos_sim(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 
-def compute_cos_sim(average_zero_tensor, encodings0, encodings1):
-    stack = []
-    for t in encodings0[0]:
-        stack.append(t)
-
-    stacked_tensors = torch.stack(stack)
-    average_zero_tensor = torch.mean(stacked_tensors, dim=0)
-    mean_cos_sims = []
-    std_cos_sims = []
-    for i in range(len(encodings0)):
-        cos_sims = []
-        for encoding in encodings0[i]:
-            # for rotation in encoding:
-            cos_sims.append(cos_sim(average_zero_tensor, encoding))
-        mean_cos_sims.append(np.mean(cos_sims))
-        std_cos_sims.append(np.std(cos_sims))
-    for i in range(len(encodings1)):
-        cos_sims = []
-        for encoding in encodings1[i]:
-            # for rotation in encoding:
-            cos_sims.append(cos_sim(average_zero_tensor, encoding))
-        mean_cos_sims.append(np.mean(cos_sims))
-        std_cos_sims.append(np.std(cos_sims))
-
-    print(mean_cos_sims)
-    print(std_cos_sims)
-    return mean_cos_sims, std_cos_sims
+def get_sample(row):
+    sample, _ = row["index"].split("_")
+    return sample
 
 
-def measure_vec_timepoint(img_file, l=560, u=560, w=200, step=448, plot_show=False):
+def get_drug(row):
+    _, drug = row["index"].split("_")
+    return float(drug)
+
+
+def compute_cos_sim(encodings, indices_df):
+    vehicle_df = indices_df.swaplevel(0, 1).loc[0, :]
+
+    sample_mean = {}
+    sample_std = {}
+    for sample in vehicle_df.index:
+        vehicle_sample_df = vehicle_df.loc[sample, :]
+        stack = []
+        if isinstance(vehicle_sample_df, pd.Series):
+            # If the sample is a Series, convert it to a DataFrame
+            vehicle_sample_df = vehicle_sample_df.to_frame().T
+
+        for replicate in vehicle_sample_df.columns:
+            for i, j in vehicle_sample_df[replicate]:
+                for replicate_rotation_encoding in encodings[j][i]:
+                    # for rotation in encoding:
+                    stack.append(replicate_rotation_encoding)
+        print(f"length of azt stack: {len(stack)}")
+        stacked_tensors = torch.stack(stack)
+        average_zero_tensor = torch.mean(stacked_tensors, dim=0)
+
+        mean_cos_sims = {}
+        std_cos_sims = {}
+        sample_df = indices_df.loc[sample, :]
+        for drug in sample_df.index:
+            cos_sims = []
+
+            drug_df = sample_df.loc[drug]
+            stack = []
+            if isinstance(drug_df, pd.Series):
+                # If the sample is a Series, convert it to a DataFrame
+                drug_df = drug_df.to_frame().T
+
+            cos_sims = []
+            for replicate in drug_df.columns:
+                for i, j in drug_df[replicate]:
+                    for replicate_rotation_encoding in encodings[j][i]:
+                        # for rotation in encoding:
+                        cos_sims.append(
+                            cos_sim(average_zero_tensor, replicate_rotation_encoding)
+                        )
+            print(f"length of {drug} stack: {len(cos_sims)}")
+            mean_cos_sims[drug] = np.mean(cos_sims)
+            std_cos_sims[drug] = np.std(cos_sims)
+        sample_mean[sample] = mean_cos_sims
+        sample_std[sample] = std_cos_sims
+    sample_mean_df = pd.DataFrame(sample_mean)
+    sample_std_df = pd.DataFrame(sample_std)
+    out_df = sample_mean_df.merge(
+        sample_std_df,
+        left_index=True,
+        right_index=True,
+        how="inner",
+        suffixes=["_mean", "_std"],
+    )
+    return out_df
+
+
+def crop_and_encode(
+    img_file, l=53, u=51, w=325, step=447, plot_show=False, rotations=4
+):
     """
+    smol = l=112, u=112, w=200, step=448
+    large =w=325, l=53,u=51, step=447
     Measure the vector representations of images at each time point relative to vehicle.
 
-    This is for the experiment data Raven emailed to be on 7-16-25 which was a 'previous PDAC spheroid experiment'.
-    These images were cropped from a larger image, but the code here still autocrops wells from the
-    larger image.
+    This crops a 96 well plate image at maximum LICOR resolution
     """
     encodings = []
-    fig, axs = plt.subplots(6, 10)
+    _, axs = plt.subplots(8, 12)
 
     # img_file = folder_path / f"{st}.png"  # Replace with your image URL or path
     image = Image.open(img_file).convert("RGB")
     image_processor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
     model = ResNetModel.from_pretrained("microsoft/resnet-50")
-    for j in range(10):
+    for j in range(12):
         encoding = []
-        for i in range(6):
+        for i in range(8):
             cropped = image.crop(
                 (l + j * step, u + i * step, l + j * step + w, u + i * step + w)
             )
             if plot_show:
                 axs[i, j].imshow(cropped)
-
-            for i in range(4):
+                axs[i, j].xaxis.set_visible(False)
+                axs[i, j].yaxis.set_visible(False)
+            rotation_encoding = []
+            for i in range(rotations):
                 cropped = cropped.transpose(Image.ROTATE_90)
-                inputs = image_processor(cropped, return_tensors="pt")
+                inputs = image_processor(cropped, return_tensors="pt", use_fast=True)
                 with torch.no_grad():
                     outputs = model(**inputs)
-                    encoding.append(outputs.pooler_output.squeeze())
+                    rotation_encoding.append(outputs.pooler_output.squeeze())
+            encoding.append(rotation_encoding)
 
         encodings.append(encoding)
     return encodings
 
 
-def main(folder_path, fname_out, plot_show=False):
+def read_base_path(base_path):
+    file_df = pd.read_csv(base_path / "files.csv")
 
-    t00 = measure_vec_timepoint(folder_path, "00", plot_show=plot_show)
-    t01 = measure_vec_timepoint(folder_path, "01", plot_show=plot_show)
-    t10 = measure_vec_timepoint(folder_path, "10", plot_show=plot_show)
-    t11 = measure_vec_timepoint(folder_path, "11", plot_show=plot_show)
-    t20 = measure_vec_timepoint(folder_path, "20", step=112, plot_show=plot_show)
-    t21 = measure_vec_timepoint(folder_path, "21", step=112, plot_show=plot_show)
-    t30 = measure_vec_timepoint(folder_path, "30", step=112, plot_show=plot_show)
-    t31 = measure_vec_timepoint(folder_path, "31", step=112, plot_show=plot_show)
-    stack = []
-    for t in t00:
-        for tt in t:
-            stack.append(tt)
-    for t in t01:
-        for tt in t:
-            stack.append(tt)
+    file_names = []
+    for folder in file_df.folder:
+        folder_path = base_path / folder
+        for f in folder_path.iterdir():
+            if f.is_dir():
+                tif_found = False
+                for inner_files in f.iterdir():
+                    if (
+                        inner_files.is_file()
+                        and inner_files.suffix == ".TIF"
+                        and tif_found == False
+                    ):
+                        file_names.append(inner_files)
+                        tif_found = True
+                if tif_found == False:
+                    raise ValueError(
+                        f"No TIF file found in folder {f}. Please check the folder structure."
+                    )
+    file_df["tif_path"] = file_names
+    sample_df = pd.read_csv(base_path / "samples.csv", header=None)
+    drug_df = pd.read_csv(base_path / "drug.csv", header=None)
+    sample_df.fillna("", inplace=True)
+    drug_df.fillna("", inplace=True)
+    sample_drug_combos = []
+    for i in range(len(sample_df)):
+        for s, d in zip(sample_df.iloc[i], drug_df.iloc[i]):
+            if s != "" and d != "":
+                sample_drug_combos.append(f"{s}_{d}")
+    sample_drug_combos = list(set(sample_drug_combos))
 
-    stacked_tensors = torch.stack(stack)
-    average_zero_tensor = torch.mean(stacked_tensors, dim=0)
+    indices = {}
+    for sample_drug_combo in sample_drug_combos:
+        index = []
+        for i in range(len(sample_df)):
+            for j, sd in enumerate(zip(sample_df.iloc[i], drug_df.iloc[i])):
+                s, d = sd
+                if f"{s}_{d}" == sample_drug_combo:
+                    index.append([i, j])
+        indices[sample_drug_combo] = index
 
-    time0_mean, time0_std = compute_cos_sim(average_zero_tensor, t00, t01)
-    time1_mean, time1_std = compute_cos_sim(average_zero_tensor, t10, t11)
-    time2_mean, time2_std = compute_cos_sim(average_zero_tensor, t20, t21)
-    time3_mean, time3_std = compute_cos_sim(average_zero_tensor, t31, t31)
-    df_mean = pd.DataFrame(
-        {
-            "before": time0_mean,
-            "after": time1_mean,
-            "48": time2_mean,
-            "72": time3_mean,
-        },
-        index=[
-            "vehicle",
-            "0.1nM",
-            "0.5nM",
-            "2nM",
-            "5nM",
-            "10nM",
-            "15nM",
-            "20nM",
-            "25nM",
-            "30nM",
-        ],
-    ).transpose()
-    df_std = pd.DataFrame(
-        {
-            "before": time0_std,
-            "after": time1_std,
-            "48": time2_std,
-            "72": time3_std,
-        },
-        index=[
-            "vehicle",
-            "0.1nM",
-            "0.5nM",
-            "2nM",
-            "5nM",
-            "10nM",
-            "15nM",
-            "20nM",
-            "25nM",
-            "30nM",
-        ],
-    ).transpose()
-    df_mean["vehicle_std"] = df_std["vehicle"]
-    df_mean["0.1nM_std"] = df_std["0.1nM"]
-    df_mean["0.5nM_std"] = df_std["0.5nM"]
-    df_mean["2nM_std"] = df_std["2nM"]
-    df_mean["5nM_std"] = df_std["5nM"]
-    df_mean["10nM_std"] = df_std["10nM"]
-    df_mean["15nM_std"] = df_std["15nM"]
-    df_mean["20nM_std"] = df_std["20nM"]
-    df_mean["25nM_std"] = df_std["25nM"]
-    df_mean["30nM_std"] = df_std["30nM"]
-    df_mean.transpose().to_csv(fname_out)
-    print(f"Results saved to {fname_out}")
+    indices_df = pd.DataFrame(indices)
+    indices_df = indices_df.T.reset_index()
+    indices_df["sample"] = indices_df.apply(get_sample, axis=1)
+    indices_df["drug"] = indices_df.apply(get_drug, axis=1)
+    indices_df.drop(columns=["index"], inplace=True)
+    indices_df.sort_values(["sample", "drug"], inplace=True)
+    indices_df.set_index(["sample", "drug"], inplace=True)
+
+    return file_df, indices_df
+
+
+def main(base_path, plot_show=False):
+
+    file_df, indices_df = read_base_path(base_path)
+    time_cos_sims = {}
+    for i in range(len(file_df)):
+        print(f"Processing {file_df.iloc[i].tif_path} at time {file_df.iloc[i].time}")
+        encodings = crop_and_encode(file_df.iloc[i].tif_path, plot_show=plot_show)
+        time_cos_sim = compute_cos_sim(encodings, indices_df)
+        time_cos_sims[file_df.iloc[i].time] = time_cos_sim
+        time_cos_sim.to_csv(
+            base_path / f"resnet50_cosine_similarity_{file_df.iloc[i].folder}.csv"
+        )
+
+    # df_final = pd.DataFrame(time_cos_sims)
+    # df_final.to_csv(fname_out)
+    # print(f"Results saved to {fname_out}")
+    return time_cos_sims
 
 
 if __name__ == "__main__":
