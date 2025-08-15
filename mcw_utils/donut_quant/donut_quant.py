@@ -40,7 +40,6 @@ def compute_cos_sim(encodings, indices_df):
                 for replicate_rotation_encoding in encodings[j][i]:
                     # for rotation in encoding:
                     stack.append(replicate_rotation_encoding)
-        print(f"length of azt stack: {len(stack)}")
         stacked_tensors = torch.stack(stack)
         average_zero_tensor = torch.mean(stacked_tensors, dim=0)
 
@@ -64,7 +63,6 @@ def compute_cos_sim(encodings, indices_df):
                         cos_sims.append(
                             cos_sim(average_zero_tensor, replicate_rotation_encoding)
                         )
-            print(f"length of {drug} stack: {len(cos_sims)}")
             mean_cos_sims[drug] = np.mean(cos_sims)
             std_cos_sims[drug] = np.std(cos_sims)
         sample_mean[sample] = mean_cos_sims
@@ -188,9 +186,6 @@ def main(base_path, plot_show=False):
             base_path / f"resnet50_cosine_similarity_{file_df.iloc[i].folder}.csv"
         )
 
-    # df_final = pd.DataFrame(time_cos_sims)
-    # df_final.to_csv(fname_out)
-    # print(f"Results saved to {fname_out}")
     return time_cos_sims
 
 
@@ -203,11 +198,6 @@ if __name__ == "__main__":
         type=str,
         help="Path to the folder containing cropped donut images.",
     )
-    parser.add_argument(
-        "fname_out",
-        type=str,
-        help="Filename to save results to.",
-    )
     args = parser.parse_args()
     folder_path = Path(args.folder_path)
-    main(folder_path, args.fname_out, plot_show=False)
+    main(folder_path, plot_show=False)
