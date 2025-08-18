@@ -43,7 +43,7 @@ def combine_replicates(mean_cos_sims, indices_df, file_df):
     return indices_df_out
 
 
-def compute_cos_sim(time_encodings, indices_df):
+def compute_cos_sim(time_encodings, time_crops, indices_df):
     vehicle_label = None
     for index in indices_df.index:
         sample, drug = index
@@ -64,9 +64,8 @@ def compute_cos_sim(time_encodings, indices_df):
         sample_df = indices_df.loc[sample, :]
 
         for replicate in sample_df.columns:
-            stack = []
-            # print(sample_df[replicate])
             for i, j in sample_df[replicate]:
+                stack = []
                 for replicate_rotation_encoding in time_encodings[0][j][i]:
                     # for rotation in encoding:
                     stack.append(replicate_rotation_encoding)
@@ -75,22 +74,26 @@ def compute_cos_sim(time_encodings, indices_df):
     for sample in vehicle_df.index:
         sample_df = indices_df.loc[sample, :]
         for replicate in sample_df.columns:
-            stack = []
             # print(sample_df[replicate])
             for i, j in sample_df[replicate]:
                 mean_cos_sim_time = []
                 # std_cos_sim_time = []
-                for time in range(len(time_encodings)):
-                    cos_sims = []
-                    for replicate_rotation_encoding in time_encodings[time][j][i]:
+                for time in range(len(time_encodings) - 1):
+                    stack = []
+                    # cos_sims = []
+                    for replicate_rotation_encoding in time_encodings[time + 1][j][i]:
                         # for rotation in encoding:
-                        cos_sims.append(
-                            cos_sim(
-                                average_zero_tensor_matrix[j][i],
-                                replicate_rotation_encoding,
-                            )
+                        stack.append(replicate_rotation_encoding)
+
+                    stacked_tensors = torch.stack(stack)
+                    avg_stacked_tensors = torch.mean(stacked_tensors, dim=0)
+
+                    mean_cos_sim_time.append(
+                        cos_sim(
+                            average_zero_tensor_matrix[j][i],
+                            avg_stacked_tensors,
                         )
-                    mean_cos_sim_time.append(np.mean(cos_sims))
+                    )
                     # std_cos_sim_time.append(np.std(cos_sims))
                 mean_cos_sims[j][i] = mean_cos_sim_time
                 # std_cos_sims[j][i] = std_cos_sim_time
@@ -124,8 +127,10 @@ def crop_and_encode(
     image = Image.open(img_file).convert("L").convert("RGB")
     image_processor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
     model = ResNetModel.from_pretrained("microsoft/resnet-50")
+    crops = []
     for j in range(12):
         encoding = []
+        inner_crops = []
         for i in range(8):
             cropped = image.crop(
                 (l + j * step, u + i * step, l + j * step + w, u + i * step + w)
@@ -141,10 +146,12 @@ def crop_and_encode(
                 with torch.no_grad():
                     outputs = model(**inputs)
                     rotation_encoding.append(outputs.pooler_output.squeeze())
+            inner_crops.append(cropped)
             encoding.append(rotation_encoding)
 
         encodings.append(encoding)
-    return encodings
+        crops.append(inner_crops)
+    return encodings, crops
 
 
 def read_base_path(base_path):
@@ -203,22 +210,32 @@ def read_base_path(base_path):
     return file_df, indices_df
 
 
-def main(base_path, show_plot=False):
+def main(base_path, l=53, u=51, w=325, step=447, show_plot=False, rotations=4):
 
     print("Reading inputs...")
     file_df, indices_df = read_base_path(base_path)
     print("Cropping and encoding wells...")
     time_encodings = []
+    time_crops = []
     for i in range(len(file_df)):
         print(f"Processing {file_df.iloc[i].tif_path} at time {file_df.iloc[i].time}")
-        encodings = crop_and_encode(file_df.iloc[i].tif_path, show_plot=show_plot)
+        encodings, crops = crop_and_encode(
+            file_df.iloc[i].tif_path,
+            l=l,
+            u=u,
+            w=w,
+            step=step,
+            show_plot=show_plot,
+            rotations=rotations,
+        )
         time_encodings.append(encodings)
+        time_crops.append(crops)
     print("Encodings complete, computing cosine similarities...")
-    mean_cos_sims = compute_cos_sim(time_encodings, indices_df)
+    mean_cos_sims = compute_cos_sim(time_encodings, time_crops, indices_df)
     print("Combining replicates...")
     out_df = combine_replicates(mean_cos_sims, indices_df, file_df)
-    out_df.to_csv(base_path / "resnet50_cosine_similarity.csv")
-    print(f"Results saved to: {base_path / 'resnet50_cosine_similarity.csv'}")
+    out_df.to_csv(base_path / "resnet50_cosine_similarity_v3.csv")
+    print(f"Results saved to: {base_path / 'resnet50_cosine_similarity_v3.csv'}")
 
 
 if __name__ == "__main__":
