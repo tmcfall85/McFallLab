@@ -20,7 +20,7 @@ def get_sample(row):
 
 def get_drug(row):
     _, drug = row["index"].split("_")
-    return float(drug)
+    return drug
 
 
 def combine_replicates(mean_cos_sims, indices_df, file_df):
@@ -44,29 +44,40 @@ def combine_replicates(mean_cos_sims, indices_df, file_df):
 
 
 def compute_cos_sim(time_encodings, indices_df):
-    vehicle_df = indices_df.swaplevel(0, 1).loc[0, :].copy()
+    vehicle_label = None
+    for index in indices_df.index:
+        sample, drug = index
+        if drug == "vehicle":
+            vehicle_label = "vehicle"
+        elif drug == 0:
+            vehicle_label = 0
+    if vehicle_label is None:
+        raise ValueError(
+            "No vehicle label found in drug.csv, must be either 'vehicle' or 0"
+        )
+    vehicle_df = indices_df.swaplevel(0, 1).loc[vehicle_label, :].copy()
     average_zero_tensor_matrix = {j: {} for j in range(12)}
     mean_cos_sims = {j: {} for j in range(12)}
     # std_cos_sims = {j: {} for j in range(12)}
 
     for sample in vehicle_df.index:
-        vehicle_sample_df = indices_df.loc[sample, :]
+        sample_df = indices_df.loc[sample, :]
 
-        for replicate in vehicle_sample_df.columns:
+        for replicate in sample_df.columns:
             stack = []
-            # print(vehicle_sample_df[replicate])
-            for i, j in vehicle_sample_df[replicate]:
+            # print(sample_df[replicate])
+            for i, j in sample_df[replicate]:
                 for replicate_rotation_encoding in time_encodings[0][j][i]:
                     # for rotation in encoding:
                     stack.append(replicate_rotation_encoding)
                 stacked_tensors = torch.stack(stack)
                 average_zero_tensor_matrix[j][i] = torch.mean(stacked_tensors, dim=0)
     for sample in vehicle_df.index:
-        vehicle_sample_df = indices_df.loc[sample, :]
-        for replicate in vehicle_sample_df.columns:
+        sample_df = indices_df.loc[sample, :]
+        for replicate in sample_df.columns:
             stack = []
-            # print(vehicle_sample_df[replicate])
-            for i, j in vehicle_sample_df[replicate]:
+            # print(sample_df[replicate])
+            for i, j in sample_df[replicate]:
                 mean_cos_sim_time = []
                 # std_cos_sim_time = []
                 for time in range(len(time_encodings)):
@@ -84,18 +95,18 @@ def compute_cos_sim(time_encodings, indices_df):
                 mean_cos_sims[j][i] = mean_cos_sim_time
                 # std_cos_sims[j][i] = std_cos_sim_time
     for sample in vehicle_df.index:
-        vehicle_sample_df = indices_df.loc[sample, :]
-        for replicate in vehicle_sample_df.columns:
+        sample_df = indices_df.loc[sample, :]
+        for replicate in sample_df.columns:
             stack = []
-            # print(vehicle_sample_df[replicate])
-            for i, j in vehicle_sample_df[replicate]:
+            # print(sample_df[replicate])
+            for i, j in sample_df[replicate]:
                 stack.append(mean_cos_sims[j][i])
 
     return mean_cos_sims
 
 
 def crop_and_encode(
-    img_file, l=53, u=51, w=325, step=447, plot_show=False, rotations=4
+    img_file, l=53, u=51, w=325, step=447, show_plot=False, rotations=4
 ):
     """
     smol = l=112, u=112, w=200, step=448
@@ -106,7 +117,7 @@ def crop_and_encode(
     """
     encodings = []
     axs = None
-    if plot_show:
+    if show_plot:
         _, axs = plt.subplots(8, 12)
 
     # img_file = folder_path / f"{st}.png"  # Replace with your image URL or path
@@ -119,7 +130,7 @@ def crop_and_encode(
             cropped = image.crop(
                 (l + j * step, u + i * step, l + j * step + w, u + i * step + w)
             )
-            if plot_show:
+            if show_plot:
                 axs[i, j].imshow(cropped)
                 axs[i, j].xaxis.set_visible(False)
                 axs[i, j].yaxis.set_visible(False)
@@ -192,7 +203,7 @@ def read_base_path(base_path):
     return file_df, indices_df
 
 
-def main(base_path, plot_show=False):
+def main(base_path, show_plot=False):
 
     print("Reading inputs...")
     file_df, indices_df = read_base_path(base_path)
@@ -200,7 +211,7 @@ def main(base_path, plot_show=False):
     time_encodings = []
     for i in range(len(file_df)):
         print(f"Processing {file_df.iloc[i].tif_path} at time {file_df.iloc[i].time}")
-        encodings = crop_and_encode(file_df.iloc[i].tif_path, plot_show=plot_show)
+        encodings = crop_and_encode(file_df.iloc[i].tif_path, show_plot=show_plot)
         time_encodings.append(encodings)
     print("Encodings complete, computing cosine similarities...")
     mean_cos_sims = compute_cos_sim(time_encodings, indices_df)
@@ -221,4 +232,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     folder_path = Path(args.folder_path)
-    main(folder_path, plot_show=False)
+    main(folder_path, show_plot=False)
