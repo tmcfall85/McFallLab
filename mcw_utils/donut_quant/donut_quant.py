@@ -23,60 +23,75 @@ def get_drug(row):
     return float(drug)
 
 
-def compute_cos_sim(encodings, indices_df):
-    vehicle_df = indices_df.swaplevel(0, 1).loc[0, :]
-
-    sample_mean = {}
-    sample_std = {}
-    for sample in vehicle_df.index:
-        vehicle_sample_df = vehicle_df.loc[sample, :]
+def combine_replicates(mean_cos_sims, indices_df, file_df):
+    exp_time = file_df.time[1:]
+    indices_df_out = indices_df.copy()
+    for t in exp_time:
+        indices_df_out[t] = -1.0
+    for t in exp_time:
+        indices_df_out[f"{t}_stdev"] = -1.0
+    for cell_line, drug in indices_df.index:
         stack = []
-        if isinstance(vehicle_sample_df, pd.Series):
-            # If the sample is a Series, convert it to a DataFrame
-            vehicle_sample_df = vehicle_sample_df.to_frame().T
+        for i, j in indices_df.loc[cell_line].loc[drug]:
+            stack.append(np.array(mean_cos_sims[j][i]))
+        mean_cos_sim = np.mean(stack, axis=0)
+        std_cos_sim = np.std(stack, axis=0)
+        for t, m in zip(exp_time, mean_cos_sim):
+            indices_df_out.loc[(cell_line, drug), t] = m
+        for t, s in zip(exp_time, std_cos_sim):
+            indices_df_out.loc[(cell_line, drug), f"{t}_stdev"] = s
+    return indices_df_out
+
+
+def compute_cos_sim(time_encodings, indices_df):
+    vehicle_df = indices_df.swaplevel(0, 1).loc[0, :].copy()
+    average_zero_tensor_matrix = {j: {} for j in range(12)}
+    mean_cos_sims = {j: {} for j in range(12)}
+    # std_cos_sims = {j: {} for j in range(12)}
+
+    for sample in vehicle_df.index:
+        vehicle_sample_df = indices_df.loc[sample, :]
 
         for replicate in vehicle_sample_df.columns:
+            stack = []
+            # print(vehicle_sample_df[replicate])
             for i, j in vehicle_sample_df[replicate]:
-                for replicate_rotation_encoding in encodings[j][i]:
+                for replicate_rotation_encoding in time_encodings[0][j][i]:
                     # for rotation in encoding:
                     stack.append(replicate_rotation_encoding)
-        stacked_tensors = torch.stack(stack)
-        average_zero_tensor = torch.mean(stacked_tensors, dim=0)
-
-        mean_cos_sims = {}
-        std_cos_sims = {}
-        sample_df = indices_df.loc[sample, :]
-        for drug in sample_df.index:
-            cos_sims = []
-
-            drug_df = sample_df.loc[drug]
+                stacked_tensors = torch.stack(stack)
+                average_zero_tensor_matrix[j][i] = torch.mean(stacked_tensors, dim=0)
+    for sample in vehicle_df.index:
+        vehicle_sample_df = indices_df.loc[sample, :]
+        for replicate in vehicle_sample_df.columns:
             stack = []
-            if isinstance(drug_df, pd.Series):
-                # If the sample is a Series, convert it to a DataFrame
-                drug_df = drug_df.to_frame().T
-
-            cos_sims = []
-            for replicate in drug_df.columns:
-                for i, j in drug_df[replicate]:
-                    for replicate_rotation_encoding in encodings[j][i]:
+            # print(vehicle_sample_df[replicate])
+            for i, j in vehicle_sample_df[replicate]:
+                mean_cos_sim_time = []
+                # std_cos_sim_time = []
+                for time in range(len(time_encodings)):
+                    cos_sims = []
+                    for replicate_rotation_encoding in time_encodings[time][j][i]:
                         # for rotation in encoding:
                         cos_sims.append(
-                            cos_sim(average_zero_tensor, replicate_rotation_encoding)
+                            cos_sim(
+                                average_zero_tensor_matrix[j][i],
+                                replicate_rotation_encoding,
+                            )
                         )
-            mean_cos_sims[drug] = np.mean(cos_sims)
-            std_cos_sims[drug] = np.std(cos_sims)
-        sample_mean[sample] = mean_cos_sims
-        sample_std[sample] = std_cos_sims
-    sample_mean_df = pd.DataFrame(sample_mean)
-    sample_std_df = pd.DataFrame(sample_std)
-    out_df = sample_mean_df.merge(
-        sample_std_df,
-        left_index=True,
-        right_index=True,
-        how="inner",
-        suffixes=["_mean", "_std"],
-    )
-    return out_df
+                    mean_cos_sim_time.append(np.mean(cos_sims))
+                    # std_cos_sim_time.append(np.std(cos_sims))
+                mean_cos_sims[j][i] = mean_cos_sim_time
+                # std_cos_sims[j][i] = std_cos_sim_time
+    for sample in vehicle_df.index:
+        vehicle_sample_df = indices_df.loc[sample, :]
+        for replicate in vehicle_sample_df.columns:
+            stack = []
+            # print(vehicle_sample_df[replicate])
+            for i, j in vehicle_sample_df[replicate]:
+                stack.append(mean_cos_sims[j][i])
+
+    return mean_cos_sims
 
 
 def crop_and_encode(
@@ -90,10 +105,12 @@ def crop_and_encode(
     This crops a 96 well plate image at maximum LICOR resolution
     """
     encodings = []
-    _, axs = plt.subplots(8, 12)
+    axs = None
+    if plot_show:
+        _, axs = plt.subplots(8, 12)
 
     # img_file = folder_path / f"{st}.png"  # Replace with your image URL or path
-    image = Image.open(img_file).convert("RGB")
+    image = Image.open(img_file).convert("L").convert("RGB")
     image_processor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
     model = ResNetModel.from_pretrained("microsoft/resnet-50")
     for j in range(12):
@@ -109,7 +126,7 @@ def crop_and_encode(
             rotation_encoding = []
             for i in range(rotations):
                 cropped = cropped.transpose(Image.ROTATE_90)
-                inputs = image_processor(cropped, return_tensors="pt", use_fast=True)
+                inputs = image_processor(cropped, return_tensors="pt")
                 with torch.no_grad():
                     outputs = model(**inputs)
                     rotation_encoding.append(outputs.pooler_output.squeeze())
@@ -143,12 +160,12 @@ def read_base_path(base_path):
     file_df["tif_path"] = file_names
     sample_df = pd.read_csv(base_path / "samples.csv", header=None)
     drug_df = pd.read_csv(base_path / "drug.csv", header=None)
-    sample_df.fillna("", inplace=True)
-    drug_df.fillna("", inplace=True)
+    sample_df.fillna(-1.0, inplace=True)
+    drug_df.fillna(-1.0, inplace=True)
     sample_drug_combos = []
     for i in range(len(sample_df)):
         for s, d in zip(sample_df.iloc[i], drug_df.iloc[i]):
-            if s != "" and d != "":
+            if s != -1.0 and d != -1.0:
                 sample_drug_combos.append(f"{s}_{d}")
     sample_drug_combos = list(set(sample_drug_combos))
 
@@ -169,24 +186,28 @@ def read_base_path(base_path):
     indices_df.drop(columns=["index"], inplace=True)
     indices_df.sort_values(["sample", "drug"], inplace=True)
     indices_df.set_index(["sample", "drug"], inplace=True)
-
+    for column in indices_df.columns:
+        indices_df[f"replicate_{column}"] = indices_df[column]
+        indices_df.drop(columns=[column], inplace=True)
     return file_df, indices_df
 
 
 def main(base_path, plot_show=False):
 
+    print("Reading inputs...")
     file_df, indices_df = read_base_path(base_path)
-    time_cos_sims = {}
+    print("Cropping and encoding wells...")
+    time_encodings = []
     for i in range(len(file_df)):
         print(f"Processing {file_df.iloc[i].tif_path} at time {file_df.iloc[i].time}")
         encodings = crop_and_encode(file_df.iloc[i].tif_path, plot_show=plot_show)
-        time_cos_sim = compute_cos_sim(encodings, indices_df)
-        time_cos_sims[file_df.iloc[i].time] = time_cos_sim
-        time_cos_sim.to_csv(
-            base_path / f"resnet50_cosine_similarity_{file_df.iloc[i].folder}.csv"
-        )
-
-    return time_cos_sims
+        time_encodings.append(encodings)
+    print("Encodings complete, computing cosine similarities...")
+    mean_cos_sims = compute_cos_sim(time_encodings, indices_df)
+    print("Combining replicates...")
+    out_df = combine_replicates(mean_cos_sims, indices_df, file_df)
+    out_df.to_csv(base_path / "resnet50_cosine_similarity.csv")
+    print(f"Results saved to: {base_path / 'resnet50_cosine_similarity.csv'}")
 
 
 if __name__ == "__main__":
