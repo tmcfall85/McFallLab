@@ -43,7 +43,7 @@ def combine_replicates(mean_cos_sims, indices_df, file_df):
     return indices_df_out
 
 
-def compute_cos_sim(time_encodings, time_crops, indices_df):
+def compute_cos_sim(time_encodings, time_crops, indices_df, columns):
     vehicle_label = None
     for index in indices_df.index:
         sample, drug = index
@@ -56,8 +56,8 @@ def compute_cos_sim(time_encodings, time_crops, indices_df):
             "No vehicle label found in drug.csv, must be either 'vehicle' or 0"
         )
     vehicle_df = indices_df.swaplevel(0, 1).loc[vehicle_label, :].copy()
-    average_zero_tensor_matrix = {j: {} for j in range(12)}
-    mean_cos_sims = {j: {} for j in range(12)}
+    average_zero_tensor_matrix = {j: {} for j in range(columns)}
+    mean_cos_sims = {j: {} for j in range(columns)}
     # std_cos_sims = {j: {} for j in range(12)}
 
     for sample in vehicle_df.index:
@@ -109,7 +109,15 @@ def compute_cos_sim(time_encodings, time_crops, indices_df):
 
 
 def crop_and_encode(
-    img_file, l=53, u=51, w=325, step=447, show_plot=False, rotations=4
+    img_file,
+    l=53,
+    u=51,
+    w=325,
+    step=447,
+    show_plot=False,
+    rotations=4,
+    columns=12,
+    rows=8,
 ):
     """
     smol = l=112, u=112, w=200, step=448
@@ -121,17 +129,17 @@ def crop_and_encode(
     encodings = []
     axs = None
     if show_plot:
-        _, axs = plt.subplots(8, 12)
+        _, axs = plt.subplots(rows, columns)
 
     # img_file = folder_path / f"{st}.png"  # Replace with your image URL or path
     image = Image.open(img_file).convert("L").convert("RGB")
     image_processor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
     model = ResNetModel.from_pretrained("microsoft/resnet-50")
     crops = []
-    for j in range(12):
+    for j in range(columns):
         encoding = []
         inner_crops = []
-        for i in range(8):
+        for i in range(rows):
             cropped = image.crop(
                 (l + j * step, u + i * step, l + j * step + w, u + i * step + w)
             )
@@ -178,6 +186,8 @@ def read_base_path(base_path):
     file_df["tif_path"] = file_names
     sample_df = pd.read_csv(base_path / "samples.csv", header=None)
     drug_df = pd.read_csv(base_path / "drug.csv", header=None)
+    rows = sample_df.shape[0]
+    columns = sample_df.shape[1]
     sample_df.fillna(-1.0, inplace=True)
     drug_df.fillna(-1.0, inplace=True)
     sample_drug_combos = []
@@ -207,13 +217,13 @@ def read_base_path(base_path):
     for column in indices_df.columns:
         indices_df[f"replicate_{column}"] = indices_df[column]
         indices_df.drop(columns=[column], inplace=True)
-    return file_df, indices_df
+    return file_df, indices_df, rows, columns
 
 
 def main(base_path, l=53, u=51, w=325, step=447, show_plot=False, rotations=4):
 
     print("Reading inputs...")
-    file_df, indices_df = read_base_path(base_path)
+    file_df, indices_df, rows, columns = read_base_path(base_path)
     print("Cropping and encoding wells...")
     time_encodings = []
     time_crops = []
@@ -227,15 +237,17 @@ def main(base_path, l=53, u=51, w=325, step=447, show_plot=False, rotations=4):
             step=step,
             show_plot=show_plot,
             rotations=rotations,
+            rows=rows,
+            columns=columns,
         )
         time_encodings.append(encodings)
         time_crops.append(crops)
     print("Encodings complete, computing cosine similarities...")
-    mean_cos_sims = compute_cos_sim(time_encodings, time_crops, indices_df)
+    mean_cos_sims = compute_cos_sim(time_encodings, time_crops, indices_df, columns)
     print("Combining replicates...")
     out_df = combine_replicates(mean_cos_sims, indices_df, file_df)
-    out_df.to_csv(base_path / "resnet50_cosine_similarity_v3.csv")
-    print(f"Results saved to: {base_path / 'resnet50_cosine_similarity_v3.csv'}")
+    out_df.to_csv(base_path / "resnet50_cosine_similarity.csv")
+    print(f"Results saved to: {base_path / 'resnet50_cosine_similarity.csv'}")
 
 
 if __name__ == "__main__":

@@ -23,7 +23,7 @@ cleanup files in scratch please and thank you
 
 `rm -rf /scratch/g/tmcfall/tempus_rcc_results`
 
-3. Download results to your computer, should be `deg_gene_expression_results_DATE.csv`
+3. Download results to your computer, should be `rsem_gene_expression_results_DATE.csv`
    
 # Local Stuff
 tbd
