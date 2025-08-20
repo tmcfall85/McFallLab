@@ -112,7 +112,7 @@ def crop_and_encode(
     _, axs = plt.subplots(rows, columns)
 
     # img_file = folder_path / f"{st}.png"  # Replace with your image URL or path
-    image = Image.open(img_file).convert("RGB")
+    image = Image.open(img_file).convert("L").convert("RGB")
     image_processor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
     model = ResNetModel.from_pretrained("microsoft/resnet-50")
     for j in range(columns):
