@@ -24,7 +24,18 @@ def get_drug(row):
 
 
 def compute_cos_sim(encodings, indices_df):
-    vehicle_df = indices_df.swaplevel(0, 1).loc[0, :]
+    vehicle_label = None
+    for index in indices_df.index:
+        sample, drug = index
+        if drug == "vehicle":
+            vehicle_label = "vehicle"
+        elif drug == 0:
+            vehicle_label = 0
+    if vehicle_label is None:
+        raise ValueError(
+            "No vehicle label found in drug.csv, must be either 'vehicle' or 0"
+        )
+    vehicle_df = indices_df.swaplevel(0, 1).loc[vehicle_label, :].copy()
 
     sample_mean = {}
     sample_std = {}
@@ -80,7 +91,15 @@ def compute_cos_sim(encodings, indices_df):
 
 
 def crop_and_encode(
-    img_file, l=53, u=51, w=325, step=447, plot_show=False, rotations=4
+    img_file,
+    l=53,
+    u=51,
+    w=325,
+    step=447,
+    plot_show=False,
+    rotations=4,
+    rows=8,
+    columns=12,
 ):
     """
     smol = l=112, u=112, w=200, step=448
@@ -90,15 +109,15 @@ def crop_and_encode(
     This crops a 96 well plate image at maximum LICOR resolution
     """
     encodings = []
-    _, axs = plt.subplots(8, 12)
+    _, axs = plt.subplots(rows, columns)
 
     # img_file = folder_path / f"{st}.png"  # Replace with your image URL or path
     image = Image.open(img_file).convert("RGB")
     image_processor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
     model = ResNetModel.from_pretrained("microsoft/resnet-50")
-    for j in range(12):
+    for j in range(columns):
         encoding = []
-        for i in range(8):
+        for i in range(rows):
             cropped = image.crop(
                 (l + j * step, u + i * step, l + j * step + w, u + i * step + w)
             )
@@ -143,6 +162,8 @@ def read_base_path(base_path):
     file_df["tif_path"] = file_names
     sample_df = pd.read_csv(base_path / "samples.csv", header=None)
     drug_df = pd.read_csv(base_path / "drug.csv", header=None)
+    rows = sample_df.shape[0]
+    columns = sample_df.shape[1]
     sample_df.fillna("", inplace=True)
     drug_df.fillna("", inplace=True)
     sample_drug_combos = []
@@ -170,16 +191,25 @@ def read_base_path(base_path):
     indices_df.sort_values(["sample", "drug"], inplace=True)
     indices_df.set_index(["sample", "drug"], inplace=True)
 
-    return file_df, indices_df
+    return file_df, indices_df, rows, columns
 
 
-def main(base_path, plot_show=False):
+def main(base_path, l=53, u=51, w=325, step=447, plot_show=False):
 
-    file_df, indices_df = read_base_path(base_path)
+    file_df, indices_df, rows, columns = read_base_path(base_path)
     time_cos_sims = {}
     for i in range(len(file_df)):
         print(f"Processing {file_df.iloc[i].tif_path} at time {file_df.iloc[i].time}")
-        encodings = crop_and_encode(file_df.iloc[i].tif_path, plot_show=plot_show)
+        encodings = crop_and_encode(
+            file_df.iloc[i].tif_path,
+            l=l,
+            u=u,
+            w=w,
+            step=step,
+            plot_show=plot_show,
+            rows=rows,
+            columns=columns,
+        )
         time_cos_sim = compute_cos_sim(encodings, indices_df)
         time_cos_sims[file_df.iloc[i].time] = time_cos_sim
         time_cos_sim.to_csv(
