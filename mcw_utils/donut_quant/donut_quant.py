@@ -20,7 +20,7 @@ def get_sample(row):
 
 def get_drug(row):
     _, drug = row["index"].split("_")
-    return float(drug)
+    return drug
 
 
 def compute_cos_sim(encodings, indices_df):
