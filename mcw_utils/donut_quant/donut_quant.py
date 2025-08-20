@@ -96,7 +96,7 @@ def crop_and_encode(
     u=51,
     w=325,
     step=447,
-    plot_show=False,
+    show_plot=False,
     rotations=4,
     rows=8,
     columns=12,
@@ -121,7 +121,7 @@ def crop_and_encode(
             cropped = image.crop(
                 (l + j * step, u + i * step, l + j * step + w, u + i * step + w)
             )
-            if plot_show:
+            if show_plot:
                 axs[i, j].imshow(cropped)
                 axs[i, j].xaxis.set_visible(False)
                 axs[i, j].yaxis.set_visible(False)
@@ -194,7 +194,7 @@ def read_base_path(base_path):
     return file_df, indices_df, rows, columns
 
 
-def main(base_path, l=53, u=51, w=325, step=447, plot_show=False):
+def main(base_path, l=53, u=51, w=325, step=447, show_plot=False):
 
     file_df, indices_df, rows, columns = read_base_path(base_path)
     time_cos_sims = {}
@@ -206,7 +206,7 @@ def main(base_path, l=53, u=51, w=325, step=447, plot_show=False):
             u=u,
             w=w,
             step=step,
-            plot_show=plot_show,
+            show_plot=show_plot,
             rows=rows,
             columns=columns,
         )
@@ -230,4 +230,4 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     folder_path = Path(args.folder_path)
-    main(folder_path, plot_show=False)
+    main(folder_path, show_plot=False)
