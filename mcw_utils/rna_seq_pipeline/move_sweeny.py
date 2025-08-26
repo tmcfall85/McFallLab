@@ -23,6 +23,8 @@ def move_rcc_files_to_scratch(
     group_dir,
     scratch_dir,
 ):
+    if scratch_dir.is_dir() == False:
+        scratch_dir.mkdir()
     for item in group_dir.iterdir():
 
         if item.name.endswith(".fastq.gz") and item.is_file():
