@@ -28,7 +28,7 @@ def move_rcc_files_to_scratch(
     for item in group_dir.iterdir():
 
         if item.name.endswith(".fastq.gz") and item.is_file():
-            dest_folder = scratch_dir / item.name.split(".tar")[0]
+            dest_folder = scratch_dir / item.name.split("_R")[0]
             if dest_folder.is_dir() == False:
                 dest_folder.mkdir()
             fastq_folder = dest_folder / "fastq"
