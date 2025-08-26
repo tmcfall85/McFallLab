@@ -10,7 +10,7 @@ def pipeline(user, out_dir):
     rsem_version = "1.3.3"
     python_version = "3.9.1"
     samtools_version = "1.15.1"
-    git_branch = "issue_1"
+    git_branch = "main"
     cpus_per_task = 12
     ram_gb_per_task = 30
     star_index = "/home/msochor/rna-seq-data/ENCFF598IDH.tar.gz"

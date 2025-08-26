@@ -9,11 +9,18 @@ It typically takes 1-2 hours to do the alignment and feature counting.  RCC can 
 
 # Moving files on RCC 
 
+## Tempus files
 Note: this works for the tempus files stored in the dseo directory.  If there is a different directory structure and/or file structure, it will need to be amended.  The tempus files are 2 fasta files gzipped together, so this copies that file and unzips it on scratch
 
 From this directory on RCC run this:
 
 `python move.py dseo work/tempus tempus_rna_seq ~/RNA_rcc_bam_with_pdac_sotb_mrn.csv`
+
+## Sweeny lab files
+From this directory on RCC run this:
+
+`python move_sweeny.py tmcfall work/sweeny_rna_seq/30-1064325724 30-1064325724`
+
 
 # Generate slurm files
 
