@@ -78,16 +78,7 @@ def compute_cos_sim(encodings, indices_df):
             std_cos_sims[drug] = np.std(cos_sims)
         sample_mean[sample] = mean_cos_sims
         sample_std[sample] = std_cos_sims
-    sample_mean_df = pd.DataFrame(sample_mean)
-    sample_std_df = pd.DataFrame(sample_std)
-    out_df = sample_mean_df.merge(
-        sample_std_df,
-        left_index=True,
-        right_index=True,
-        how="inner",
-        suffixes=["_mean", "_std"],
-    )
-    return out_df
+    return sample_mean, sample_std
 
 
 def crop_and_encode(
@@ -187,11 +178,36 @@ def read_base_path(base_path):
     indices_df = indices_df.T.reset_index()
     indices_df["sample"] = indices_df.apply(get_sample, axis=1)
     indices_df["drug"] = indices_df.apply(get_drug, axis=1)
-    indices_df.drop(columns=["index"], inplace=True)
-    indices_df.sort_values(["sample", "drug"], inplace=True)
+    indices_df["drugsort"] = indices_df["drug"].astype(str).str.replace("vehicle", "0")
+    try:
+        indices_df["drugsort"] = indices_df["drugsort"].astype(float)
+    except ValueError:
+        print(
+            "Cannot convert to float for sorting purposes, order might be kinda rando!"
+        )
+    indices_df.sort_values(["sample", "drugsort"], inplace=True)
+    indices_df.drop(columns=["index", "drugsort"], inplace=True)
     indices_df.set_index(["sample", "drug"], inplace=True)
 
     return file_df, indices_df, rows, columns
+
+
+def combine_timepoints(time_cos_sims, file_df, indices_df):
+
+    indices_df_out = indices_df.copy()
+    for f in file_df.folder:
+        indices_df_out[f] = -1.0
+    for f in file_df.folder:
+        indices_df_out[f"{f}_stdev"] = -1.0
+    for t, f in zip(file_df.time, file_df.folder):
+        for cell_line, drug in indices_df.index:
+            indices_df_out.loc[(cell_line, drug), f] = time_cos_sims[t][0][cell_line][
+                drug
+            ]
+            indices_df_out.loc[(cell_line, drug), f"{f}_stdev"] = time_cos_sims[t][1][
+                cell_line
+            ][drug]
+    return indices_df_out
 
 
 def main(base_path, l=53, u=51, w=325, step=447, show_plot=False):
@@ -212,11 +228,10 @@ def main(base_path, l=53, u=51, w=325, step=447, show_plot=False):
         )
         time_cos_sim = compute_cos_sim(encodings, indices_df)
         time_cos_sims[file_df.iloc[i].time] = time_cos_sim
-        time_cos_sim.to_csv(
-            base_path / f"resnet50_cosine_similarity_{file_df.iloc[i].folder}.csv"
-        )
+    results_df = combine_timepoints(time_cos_sims, file_df, indices_df)
+    results_df.to_csv(base_path / "resnet50_cosine_similarity_to_vehicle.csv")
 
-    return time_cos_sims
+    return results_df
 
 
 if __name__ == "__main__":
