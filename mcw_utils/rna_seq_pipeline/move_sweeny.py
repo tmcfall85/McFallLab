@@ -33,6 +33,7 @@ def move_rcc_files_to_scratch(
             if fastq_folder.is_dir() == False:
                 fastq_folder.mkdir()
             dest_file = fastq_folder / item.name
+            print(f"Copying {item} to {dest_file}")
             shutil.copy(str(item), str(dest_file))
 
 
