@@ -40,14 +40,18 @@ def get_gene_metadata(gene_id):
 
 
 def read_and_merge(deg_file, experiment_file):
-    deg_df = pd.read_excel(deg_file)
+    deg_df = pd.read_csv(deg_file)
+    deg_df.rename(columns={"Unnamed: 0": "gene_id"}, inplace=True)
+    deg_df.set_index("gene_id", inplace=True)
     experiment_df = pd.read_csv(experiment_file)
 
     deg_df = deg_df.T.reset_index()
-    deg_with_experiment = deg_df.merge(
-        experiment_df, left_on="index", right_on="experiment", how="left"
+    deg_df.rename(columns={"index": "experiment"}, inplace=True)
+    deg_df["experiment"] = pd.to_numeric(deg_df["experiment"], errors="coerce").astype(
+        "Int64"
     )
-    deg_with_experiment.drop(columns=["experiment"], inplace=True)
+    deg_with_experiment = deg_df.merge(experiment_df, on="experiment", how="left")
+    print(deg_with_experiment.head())
     return deg_with_experiment
 
 
@@ -60,11 +64,13 @@ def run_deseq2(deg_with_pfs, out_file, a_label="GFP", b_label="NOX5"):
     metadata = deg_with_pfs_ab[["group"]].copy()
     a_condition = lambda row: condition(row, a_label)
     metadata["condition"] = metadata.apply(a_condition, axis=1)
-    metadata.drop(columns=["experiment"], inplace=True)
+    print(metadata.head())
+    metadata.drop(columns=["group"], inplace=True)
 
     deg_with_pfs_ab.drop(columns=["group"], inplace=True)
     deg_with_pfs_ab_int = deg_with_pfs_ab.copy()
     print("Converting TPMs to integers for deseq...")
+    deg_with_pfs_ab_int.fillna(0, inplace=True)
     for col in tqdm(deg_with_pfs_ab_int.columns):
         deg_with_pfs_ab_int[col] = integerize(deg_with_pfs_ab_int[col])
 
@@ -114,6 +120,10 @@ def run_deseq2(deg_with_pfs, out_file, a_label="GFP", b_label="NOX5"):
     )
     results_with_metadata.drop(columns=["logfold_sort"], inplace=True)
     results_with_metadata.fillna("", inplace=True)
+    deg_to_merge = deg_with_pfs_ab_int.T
+    results_with_metadata = results_with_metadata.merge(
+        deg_to_merge, left_index=True, right_index=True, how="left"
+    )
     out_file_today = f"{out_file}_{date.today()}.csv"
     results_with_metadata.to_csv(out_file_today)
     print(f"Results saved to {out_file_today}")
