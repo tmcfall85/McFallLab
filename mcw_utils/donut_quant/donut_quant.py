@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
+import pickle
 
 
 def cos_sim(a, b):
@@ -248,6 +249,9 @@ def main(base_path, l=53, u=51, w=325, step=447, show_plot=False, rotations=4):
     out_df = combine_replicates(mean_cos_sims, indices_df, file_df)
     out_df.to_csv(base_path / "resnet50_cosine_similarity.csv")
     print(f"Results saved to: {base_path / 'resnet50_cosine_similarity.csv'}")
+    with open(base_path / "resnet50_cosine_similarity.pkl", "wb") as f:
+        pickle.dump(mean_cos_sims, f)
+    print(f"Pickle saved to: {base_path / 'resnet50_cosine_similarity.pkl '}")
 
 
 if __name__ == "__main__":
