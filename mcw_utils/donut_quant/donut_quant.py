@@ -43,7 +43,72 @@ def combine_replicates(mean_cos_sims, indices_df, file_df):
     return indices_df_out
 
 
-def compute_cos_sim(encodings, indices_df):
+def compute_cos_sim_within_well(time_encodings, time_crops, indices_df, columns):
+    vehicle_label = None
+    for index in indices_df.index:
+        sample, drug = index
+        if drug == "vehicle":
+            vehicle_label = "vehicle"
+        elif drug == 0:
+            vehicle_label = 0
+    if vehicle_label is None:
+        raise ValueError(
+            "No vehicle label found in drug.csv, must be either 'vehicle' or 0"
+        )
+    vehicle_df = indices_df.swaplevel(0, 1).loc[vehicle_label, :].copy()
+    average_zero_tensor_matrix = {j: {} for j in range(columns)}
+    mean_cos_sims = {j: {} for j in range(columns)}
+    # std_cos_sims = {j: {} for j in range(12)}
+
+    for sample in vehicle_df.index:
+        sample_df = indices_df.loc[sample, :]
+
+        for replicate in sample_df.columns:
+            for i, j in sample_df[replicate]:
+                stack = []
+                for replicate_rotation_encoding in time_encodings[0][j][i]:
+                    # for rotation in encoding:
+                    stack.append(replicate_rotation_encoding)
+                stacked_tensors = torch.stack(stack)
+                average_zero_tensor_matrix[j][i] = torch.mean(stacked_tensors, dim=0)
+    for sample in vehicle_df.index:
+        sample_df = indices_df.loc[sample, :]
+        for replicate in sample_df.columns:
+            # print(sample_df[replicate])
+            for i, j in sample_df[replicate]:
+                mean_cos_sim_time = []
+                # std_cos_sim_time = []
+                for time in range(len(time_encodings) - 1):
+                    stack = []
+                    # cos_sims = []
+                    for replicate_rotation_encoding in time_encodings[time + 1][j][i]:
+                        # for rotation in encoding:
+                        stack.append(replicate_rotation_encoding)
+
+                    stacked_tensors = torch.stack(stack)
+                    avg_stacked_tensors = torch.mean(stacked_tensors, dim=0)
+
+                    mean_cos_sim_time.append(
+                        cos_sim(
+                            average_zero_tensor_matrix[j][i],
+                            avg_stacked_tensors,
+                        )
+                    )
+                    # std_cos_sim_time.append(np.std(cos_sims))
+                mean_cos_sims[j][i] = mean_cos_sim_time
+                # std_cos_sims[j][i] = std_cos_sim_time
+    for sample in vehicle_df.index:
+        sample_df = indices_df.loc[sample, :]
+        for replicate in sample_df.columns:
+            stack = []
+            # print(sample_df[replicate])
+            for i, j in sample_df[replicate]:
+                stack.append(mean_cos_sims[j][i])
+
+    return mean_cos_sims
+
+
+def compute_cos_sim_within_timepoint(encodings, indices_df):
     vehicle_label = None
     for index in indices_df.index:
         sample, drug = index
