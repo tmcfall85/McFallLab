@@ -174,8 +174,8 @@ def crop_and_encode(
     step=447,
     show_plot=False,
     rotations=4,
-    rows=8,
     columns=12,
+    rows=8,
 ):
     """
     smol = l=112, u=112, w=200, step=448
@@ -185,14 +185,18 @@ def crop_and_encode(
     This crops a 96 well plate image at maximum LICOR resolution
     """
     encodings = []
-    _, axs = plt.subplots(rows, columns)
+    axs = None
+    if show_plot:
+        _, axs = plt.subplots(rows, columns)
 
     # img_file = folder_path / f"{st}.png"  # Replace with your image URL or path
     image = Image.open(img_file).convert("L").convert("RGB")
     image_processor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
     model = ResNetModel.from_pretrained("microsoft/resnet-50")
+    crops = []
     for j in range(columns):
         encoding = []
+        inner_crops = []
         for i in range(rows):
             cropped = image.crop(
                 (l + j * step, u + i * step, l + j * step + w, u + i * step + w)
@@ -204,14 +208,16 @@ def crop_and_encode(
             rotation_encoding = []
             for i in range(rotations):
                 cropped = cropped.transpose(Image.ROTATE_90)
-                inputs = image_processor(cropped, return_tensors="pt", use_fast=True)
+                inputs = image_processor(cropped, return_tensors="pt")
                 with torch.no_grad():
                     outputs = model(**inputs)
                     rotation_encoding.append(outputs.pooler_output.squeeze())
+            inner_crops.append(cropped)
             encoding.append(rotation_encoding)
 
         encodings.append(encoding)
-    return encodings
+        crops.append(inner_crops)
+    return encodings, crops
 
 
 def read_base_path(base_path):
@@ -301,7 +307,7 @@ def main(base_path, l=53, u=51, w=325, step=447, show_plot=False):
     time_cos_sims = {}
     for i in range(len(file_df)):
         print(f"Processing {file_df.iloc[i].tif_path} at time {file_df.iloc[i].time}")
-        encodings = crop_and_encode(
+        encodings, _ = crop_and_encode(
             file_df.iloc[i].tif_path,
             l=l,
             u=u,
@@ -311,7 +317,7 @@ def main(base_path, l=53, u=51, w=325, step=447, show_plot=False):
             rows=rows,
             columns=columns,
         )
-        time_cos_sim = compute_cos_sim(encodings, indices_df)
+        time_cos_sim = compute_cos_sim_within_timepoint(encodings, indices_df)
         time_cos_sims[file_df.iloc[i].time] = time_cos_sim
     results_df = combine_timepoints(time_cos_sims, file_df, indices_df)
     results_df.to_csv(base_path / "resnet50_cosine_similarity_to_vehicle.csv")
