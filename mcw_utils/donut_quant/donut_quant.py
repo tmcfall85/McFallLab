@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
+import pickle
 
 
 def cos_sim(a, b):
@@ -301,7 +302,48 @@ def combine_timepoints(time_cos_sims, file_df, indices_df):
     return indices_df_out
 
 
-def main(base_path, l=53, u=51, w=325, step=447, show_plot=False):
+def quantify_within_well(
+    base_path, l=53, u=51, w=325, step=447, show_plot=False, rotations=4
+):
+
+    print("Reading inputs...")
+    file_df, indices_df, rows, columns = read_base_path(base_path)
+    print("Cropping and encoding wells...")
+    time_encodings = []
+    time_crops = []
+    for i in range(len(file_df)):
+        print(f"Processing {file_df.iloc[i].tif_path} at time {file_df.iloc[i].time}")
+        encodings, crops = crop_and_encode(
+            file_df.iloc[i].tif_path,
+            l=l,
+            u=u,
+            w=w,
+            step=step,
+            show_plot=show_plot,
+            rotations=rotations,
+            rows=rows,
+            columns=columns,
+        )
+        time_encodings.append(encodings)
+        time_crops.append(crops)
+    print("Encodings complete, computing cosine similarities...")
+    mean_cos_sims = compute_cos_sim_within_well(
+        time_encodings, time_crops, indices_df, columns
+    )
+    print("Combining replicates...")
+    out_df = combine_replicates(mean_cos_sims, indices_df, file_df)
+    out_df.to_csv(base_path / "resnet50_cosine_similarity_within_well.csv")
+    print(
+        f"Results saved to: {base_path / 'resnet50_cosine_similarity_within_well.csv'}"
+    )
+    with open(base_path / "resnet50_cosine_similarity_within_well.pkl", "wb") as f:
+        pickle.dump(mean_cos_sims, f)
+    print(
+        f"Pickle saved to: {base_path / 'resnet50_cosine_similarity_within_well.pkl '}"
+    )
+
+
+def quantify_within_timepoints(base_path, l=53, u=51, w=325, step=447, show_plot=False):
 
     file_df, indices_df, rows, columns = read_base_path(base_path)
     time_cos_sims = {}
@@ -320,7 +362,14 @@ def main(base_path, l=53, u=51, w=325, step=447, show_plot=False):
         time_cos_sim = compute_cos_sim_within_timepoint(encodings, indices_df)
         time_cos_sims[file_df.iloc[i].time] = time_cos_sim
     results_df = combine_timepoints(time_cos_sims, file_df, indices_df)
-    results_df.to_csv(base_path / "resnet50_cosine_similarity_to_vehicle.csv")
+    results_df.to_csv(base_path / "resnet50_cosine_similarity_within_timepoints.csv")
+    with open(
+        base_path / "resnet50_cosine_similarity_within_timepoints.pkl", "wb"
+    ) as f:
+        pickle.dump(time_cos_sims, f)
+    print(
+        f"Pickle saved to: {base_path / 'resnet50_cosine_similarity_within_timepoints.pkl '}"
+    )
 
     return results_df
 
@@ -334,6 +383,12 @@ if __name__ == "__main__":
         type=str,
         help="Path to the folder containing cropped donut images.",
     )
+    parser.add_argument(
+        "within_well", type=bool, help="Whether to compute within well.", default=False
+    )
     args = parser.parse_args()
     folder_path = Path(args.folder_path)
-    main(folder_path, show_plot=False)
+    if args.within_well:
+        quantify_within_well(folder_path, show_plot=False)
+    else:
+        quantify_within_timepoints(folder_path, show_plot=False)
