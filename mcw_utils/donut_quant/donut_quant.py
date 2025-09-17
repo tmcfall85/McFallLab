@@ -1,13 +1,13 @@
-from transformers import AutoImageProcessor, ResNetModel
-from datasets import load_dataset
-import torch
-
-from PIL import Image
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-from pathlib import Path
+import argparse
 import pickle
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import torch
+from PIL import Image
+from transformers import AutoImageProcessor, ResNetModel
 
 
 def cos_sim(a, b):
@@ -22,26 +22,6 @@ def get_sample(row):
 def get_drug(row):
     _, drug = row["index"].split("_")
     return drug
-
-
-def combine_replicates(mean_cos_sims, indices_df, file_df):
-    exp_time = file_df.time[1:]
-    indices_df_out = indices_df.copy()
-    for t in exp_time:
-        indices_df_out[t] = -1.0
-    for t in exp_time:
-        indices_df_out[f"{t}_stdev"] = -1.0
-    for cell_line, drug in indices_df.index:
-        stack = []
-        for i, j in indices_df.loc[cell_line].loc[drug]:
-            stack.append(np.array(mean_cos_sims[j][i]))
-        mean_cos_sim = np.mean(stack, axis=0)
-        std_cos_sim = np.std(stack, axis=0)
-        for t, m in zip(exp_time, mean_cos_sim):
-            indices_df_out.loc[(cell_line, drug), t] = m
-        for t, s in zip(exp_time, std_cos_sim):
-            indices_df_out.loc[(cell_line, drug), f"{t}_stdev"] = s
-    return indices_df_out
 
 
 def compute_cos_sim_within_well(time_encodings, time_crops, indices_df, columns):
@@ -284,6 +264,27 @@ def read_base_path(base_path):
     return file_df, indices_df, rows, columns
 
 
+def combine_replicates(mean_cos_sims, indices_df, file_df):
+    folder = file_df.folder[1:]
+
+    indices_df_out = indices_df.copy()
+    for t in folder:
+        indices_df_out[t] = -1.0
+    for t in folder:
+        indices_df_out[f"{t}_stdev"] = -1.0
+    for cell_line, drug in indices_df.index:
+        stack = []
+        for i, j in indices_df.loc[cell_line].loc[drug]:
+            stack.append(np.array(mean_cos_sims[j][i]))
+        mean_cos_sim = np.mean(stack, axis=0)
+        std_cos_sim = np.std(stack, axis=0)
+        for t, m in zip(folder, mean_cos_sim):
+            indices_df_out.loc[(cell_line, drug), t] = m
+        for t, s in zip(folder, std_cos_sim):
+            indices_df_out.loc[(cell_line, drug), f"{t}_stdev"] = s
+    return indices_df_out
+
+
 def combine_timepoints(time_cos_sims, file_df, indices_df):
 
     indices_df_out = indices_df.copy()
@@ -291,6 +292,7 @@ def combine_timepoints(time_cos_sims, file_df, indices_df):
         indices_df_out[f] = -1.0
     for f in file_df.folder:
         indices_df_out[f"{f}_stdev"] = -1.0
+
     for t, f in zip(file_df.time, file_df.folder):
         for cell_line, drug in indices_df.index:
             indices_df_out.loc[(cell_line, drug), f] = time_cos_sims[t][0][cell_line][
@@ -343,7 +345,7 @@ def quantify_within_well(
     )
 
 
-def quantify_within_timepoints(base_path, l=53, u=51, w=325, step=447, show_plot=False):
+def quantify_within_timepoint(base_path, l=53, u=51, w=325, step=447, show_plot=False):
 
     file_df, indices_df, rows, columns = read_base_path(base_path)
     time_cos_sims = {}
@@ -363,6 +365,9 @@ def quantify_within_timepoints(base_path, l=53, u=51, w=325, step=447, show_plot
         time_cos_sims[file_df.iloc[i].time] = time_cos_sim
     results_df = combine_timepoints(time_cos_sims, file_df, indices_df)
     results_df.to_csv(base_path / "resnet50_cosine_similarity_within_timepoints.csv")
+    print(
+        f"Results saved to: {base_path / 'resnet50_cosine_similarity_within_timepoints.csv'}"
+    )
     with open(
         base_path / "resnet50_cosine_similarity_within_timepoints.pkl", "wb"
     ) as f:
@@ -375,20 +380,21 @@ def quantify_within_timepoints(base_path, l=53, u=51, w=325, step=447, show_plot
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(description="Measure donuts in file path.")
     parser.add_argument(
-        "folder_path",
+        "--folder-path",
         type=str,
-        help="Path to the folder containing cropped donut images.",
+        help="Path to the folder containing donut images.",
     )
     parser.add_argument(
-        "within_well", type=bool, help="Whether to compute within well.", default=False
+        "--within-well",
+        type=bool,
+        help="Whether to compute within well.",
+        default=False,
     )
     args = parser.parse_args()
     folder_path = Path(args.folder_path)
     if args.within_well:
         quantify_within_well(folder_path, show_plot=False)
     else:
-        quantify_within_timepoints(folder_path, show_plot=False)
+        quantify_within_timepoint(folder_path, show_plot=False)
