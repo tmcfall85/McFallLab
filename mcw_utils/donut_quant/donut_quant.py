@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
+import pickle
 
 
 def cos_sim(a, b):
@@ -23,7 +24,92 @@ def get_drug(row):
     return drug
 
 
-def compute_cos_sim(encodings, indices_df):
+def combine_replicates(mean_cos_sims, indices_df, file_df):
+    exp_time = file_df.time[1:]
+    indices_df_out = indices_df.copy()
+    for t in exp_time:
+        indices_df_out[t] = -1.0
+    for t in exp_time:
+        indices_df_out[f"{t}_stdev"] = -1.0
+    for cell_line, drug in indices_df.index:
+        stack = []
+        for i, j in indices_df.loc[cell_line].loc[drug]:
+            stack.append(np.array(mean_cos_sims[j][i]))
+        mean_cos_sim = np.mean(stack, axis=0)
+        std_cos_sim = np.std(stack, axis=0)
+        for t, m in zip(exp_time, mean_cos_sim):
+            indices_df_out.loc[(cell_line, drug), t] = m
+        for t, s in zip(exp_time, std_cos_sim):
+            indices_df_out.loc[(cell_line, drug), f"{t}_stdev"] = s
+    return indices_df_out
+
+
+def compute_cos_sim_within_well(time_encodings, time_crops, indices_df, columns):
+    vehicle_label = None
+    for index in indices_df.index:
+        sample, drug = index
+        if drug == "vehicle":
+            vehicle_label = "vehicle"
+        elif drug == 0:
+            vehicle_label = 0
+    if vehicle_label is None:
+        raise ValueError(
+            "No vehicle label found in drug.csv, must be either 'vehicle' or 0"
+        )
+    vehicle_df = indices_df.swaplevel(0, 1).loc[vehicle_label, :].copy()
+    average_zero_tensor_matrix = {j: {} for j in range(columns)}
+    mean_cos_sims = {j: {} for j in range(columns)}
+    # std_cos_sims = {j: {} for j in range(12)}
+
+    for sample in vehicle_df.index:
+        sample_df = indices_df.loc[sample, :]
+
+        for replicate in sample_df.columns:
+            for i, j in sample_df[replicate]:
+                stack = []
+                for replicate_rotation_encoding in time_encodings[0][j][i]:
+                    # for rotation in encoding:
+                    stack.append(replicate_rotation_encoding)
+                stacked_tensors = torch.stack(stack)
+                average_zero_tensor_matrix[j][i] = torch.mean(stacked_tensors, dim=0)
+    for sample in vehicle_df.index:
+        sample_df = indices_df.loc[sample, :]
+        for replicate in sample_df.columns:
+            # print(sample_df[replicate])
+            for i, j in sample_df[replicate]:
+                mean_cos_sim_time = []
+                # std_cos_sim_time = []
+                for time in range(len(time_encodings) - 1):
+                    stack = []
+                    # cos_sims = []
+                    for replicate_rotation_encoding in time_encodings[time + 1][j][i]:
+                        # for rotation in encoding:
+                        stack.append(replicate_rotation_encoding)
+
+                    stacked_tensors = torch.stack(stack)
+                    avg_stacked_tensors = torch.mean(stacked_tensors, dim=0)
+
+                    mean_cos_sim_time.append(
+                        cos_sim(
+                            average_zero_tensor_matrix[j][i],
+                            avg_stacked_tensors,
+                        )
+                    )
+                    # std_cos_sim_time.append(np.std(cos_sims))
+                mean_cos_sims[j][i] = mean_cos_sim_time
+                # std_cos_sims[j][i] = std_cos_sim_time
+    for sample in vehicle_df.index:
+        sample_df = indices_df.loc[sample, :]
+        for replicate in sample_df.columns:
+            stack = []
+            # print(sample_df[replicate])
+            for i, j in sample_df[replicate]:
+                stack.append(mean_cos_sims[j][i])
+
+    return mean_cos_sims
+
+
+def compute_cos_sim_within_timepoint(encodings, indices_df):
     vehicle_label = None
     for index in indices_df.index:
         sample, drug = index
@@ -89,8 +175,8 @@ def crop_and_encode(
     step=447,
     show_plot=False,
     rotations=4,
-    rows=8,
     columns=12,
+    rows=8,
 ):
     """
     smol = l=112, u=112, w=200, step=448
@@ -100,14 +186,18 @@ def crop_and_encode(
     This crops a 96 well plate image at maximum LICOR resolution
     """
     encodings = []
-    _, axs = plt.subplots(rows, columns)
+    axs = None
+    if show_plot:
+        _, axs = plt.subplots(rows, columns)
 
     # img_file = folder_path / f"{st}.png"  # Replace with your image URL or path
     image = Image.open(img_file).convert("L").convert("RGB")
     image_processor = AutoImageProcessor.from_pretrained("microsoft/resnet-50")
     model = ResNetModel.from_pretrained("microsoft/resnet-50")
+    crops = []
     for j in range(columns):
         encoding = []
+        inner_crops = []
         for i in range(rows):
             cropped = image.crop(
                 (l + j * step, u + i * step, l + j * step + w, u + i * step + w)
@@ -119,14 +209,16 @@ def crop_and_encode(
             rotation_encoding = []
             for i in range(rotations):
                 cropped = cropped.transpose(Image.ROTATE_90)
-                inputs = image_processor(cropped, return_tensors="pt", use_fast=True)
+                inputs = image_processor(cropped, return_tensors="pt")
                 with torch.no_grad():
                     outputs = model(**inputs)
                     rotation_encoding.append(outputs.pooler_output.squeeze())
+            inner_crops.append(cropped)
             encoding.append(rotation_encoding)
 
         encodings.append(encoding)
-    return encodings
+        crops.append(inner_crops)
+    return encodings, crops
 
 
 def read_base_path(base_path):
@@ -210,13 +302,54 @@ def combine_timepoints(time_cos_sims, file_df, indices_df):
     return indices_df_out
 
 
-def main(base_path, l=53, u=51, w=325, step=447, show_plot=False):
+def quantify_within_well(
+    base_path, l=53, u=51, w=325, step=447, show_plot=False, rotations=4
+):
+
+    print("Reading inputs...")
+    file_df, indices_df, rows, columns = read_base_path(base_path)
+    print("Cropping and encoding wells...")
+    time_encodings = []
+    time_crops = []
+    for i in range(len(file_df)):
+        print(f"Processing {file_df.iloc[i].tif_path} at time {file_df.iloc[i].time}")
+        encodings, crops = crop_and_encode(
+            file_df.iloc[i].tif_path,
+            l=l,
+            u=u,
+            w=w,
+            step=step,
+            show_plot=show_plot,
+            rotations=rotations,
+            rows=rows,
+            columns=columns,
+        )
+        time_encodings.append(encodings)
+        time_crops.append(crops)
+    print("Encodings complete, computing cosine similarities...")
+    mean_cos_sims = compute_cos_sim_within_well(
+        time_encodings, time_crops, indices_df, columns
+    )
+    print("Combining replicates...")
+    out_df = combine_replicates(mean_cos_sims, indices_df, file_df)
+    out_df.to_csv(base_path / "resnet50_cosine_similarity_within_well.csv")
+    print(
+        f"Results saved to: {base_path / 'resnet50_cosine_similarity_within_well.csv'}"
+    )
+    with open(base_path / "resnet50_cosine_similarity_within_well.pkl", "wb") as f:
+        pickle.dump(mean_cos_sims, f)
+    print(
+        f"Pickle saved to: {base_path / 'resnet50_cosine_similarity_within_well.pkl '}"
+    )
+
+
+def quantify_within_timepoints(base_path, l=53, u=51, w=325, step=447, show_plot=False):
 
     file_df, indices_df, rows, columns = read_base_path(base_path)
     time_cos_sims = {}
     for i in range(len(file_df)):
         print(f"Processing {file_df.iloc[i].tif_path} at time {file_df.iloc[i].time}")
-        encodings = crop_and_encode(
+        encodings, _ = crop_and_encode(
             file_df.iloc[i].tif_path,
             l=l,
             u=u,
@@ -226,10 +359,17 @@ def main(base_path, l=53, u=51, w=325, step=447, show_plot=False):
             rows=rows,
             columns=columns,
         )
-        time_cos_sim = compute_cos_sim(encodings, indices_df)
+        time_cos_sim = compute_cos_sim_within_timepoint(encodings, indices_df)
         time_cos_sims[file_df.iloc[i].time] = time_cos_sim
     results_df = combine_timepoints(time_cos_sims, file_df, indices_df)
-    results_df.to_csv(base_path / "resnet50_cosine_similarity_to_vehicle.csv")
+    results_df.to_csv(base_path / "resnet50_cosine_similarity_within_timepoints.csv")
+    with open(
+        base_path / "resnet50_cosine_similarity_within_timepoints.pkl", "wb"
+    ) as f:
+        pickle.dump(time_cos_sims, f)
+    print(
+        f"Pickle saved to: {base_path / 'resnet50_cosine_similarity_within_timepoints.pkl '}"
+    )
 
     return results_df
 
@@ -243,6 +383,12 @@ if __name__ == "__main__":
         type=str,
         help="Path to the folder containing cropped donut images.",
     )
+    parser.add_argument(
+        "within_well", type=bool, help="Whether to compute within well.", default=False
+    )
     args = parser.parse_args()
     folder_path = Path(args.folder_path)
-    main(folder_path, show_plot=False)
+    if args.within_well:
+        quantify_within_well(folder_path, show_plot=False)
+    else:
+        quantify_within_timepoints(folder_path, show_plot=False)
