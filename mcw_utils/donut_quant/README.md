@@ -112,3 +112,47 @@ The default values for this line up with the highest resolution images in the ex
 If you turn on plotting with `show_plot=True` then you can see the cropping.
 
 How you want to crop is up to you, you can crop just the interior of the well if that catches your cells.  Or you can crop the whole well if cells are drifting.  There isn't a perfectly correct answer, its what works for your experiment and setup.
+
+# Normalization - aka within well vs within timepoint
+In our experimental setup, the cells are magnetically stabilized into a donut shape (other shapes are possible, and this analysis would still be valid) and then dosed either with a vehicle (no drug) or drug in various doses for a certain amount of time, and then imaged.  Cells are left in an incubator in between, but there is no magnetic field anymore to retain the shape.
+
+Essentially what this means is that the donuts are falling apart even with just vehicle.  What we are attempting to measure is degradation being sped up by drug or different mutational status.
+
+Normalization occurs when we decide what images to compare to as a reference of "not yet degraded".
+
+## Approach 1: comparing within well
+This is the most straightforward.  Take timepoint zero (before drug added) for each well as your reference encoding vector.  There will be one reference vector for each well location.
+
+Compare each future timepoint to this reference.
+
+What this tells you is the degradation of each well individually.  Technical replicates can be averaged (and are by default in the code).
+
+### Pros
+1. Pretty straightforward to understand
+2. Gives you a time series
+3. If individual wells are "weird" then you compare starting weird versus it getting weirder over time.  This means its a little more resiliant to things like, I pipetted too hard and disrupted the cells in this particular well.
+4. You can use the time series plot to determine where cells are too baseline degraded such that the data is useless (you should also do this qualitatively by looking at images but its better to have both qualitative and quantitative).
+
+## Cons
+1. You get no measure at your baseline (because it is the reference)
+2. You are measuring the degradation of the cells directly.  So drug effect is the delta of these two and it can be noisy when you take the difference.  You might not see anything
+
+## Approach 2: comparing within timepoints
+This approach uses the vehicle controls at each timepoint as the reference vector.  You will have one reference vector for each timepoint.
+
+This tells you how degraded drug is versus vehicle directly.
+
+### Pros
+1. You measure drug related degradation directly.  Far less noisy
+2. The can use a time series plot to determine where drug is maximally effective.
+
+### Cons
+1. You **cannot** plot this as a time series to determine degradation.  Each time should be analyzed individually and treated like an experimental value (i.e. I let the cells have the drug for 12 hours and imaged...).  
+2. This approach is susceptible to one weird well throwing off the average.  This can be mitigated by removing that well as a technical replicate (assuming qualitatively you see an experimental error like pipetting disrupting the donut shape)
+
+## Normalization summation
+Both approaches are useful.  Run both, the code is pretty quick.  You can answer different questions with different normalization strategies.  
+
+Basically what I'm telling you is to think.  You are a scientist.  Act like it!  Have fun!  Think about what you are doing and what the code is doing.
+
+Please.  Think.  Don't just run code.  This is 2025.  Dark things happen when people just run code.  Or stupid things.
