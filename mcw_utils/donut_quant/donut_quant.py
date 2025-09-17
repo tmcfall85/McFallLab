@@ -1,13 +1,12 @@
-from transformers import AutoImageProcessor, ResNetModel
-from datasets import load_dataset
-import torch
-
-from PIL import Image
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-from pathlib import Path
 import pickle
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import torch
+from PIL import Image
+from transformers import AutoImageProcessor, ResNetModel
 
 
 def cos_sim(a, b):
