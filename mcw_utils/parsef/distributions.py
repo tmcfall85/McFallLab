@@ -51,8 +51,8 @@ class Distribution(Isoform):
             sk_hist = np.histogram(skips)
             sk_hist_dist = rv_histogram(sk_hist, density=False)
 
-            self.left_start_distributions[isoform] = ls_hist_dist
-            self.right_start_distributions[isoform] = rs_hist_dist
+            self.left_start_distributions[isoform] = ls_hist
+            self.right_start_distributions[isoform] = rs_hist
             self.skip_distributions[isoform] = sk_hist_dist
 
             p = []
