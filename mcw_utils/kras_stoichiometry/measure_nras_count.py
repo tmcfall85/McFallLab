@@ -12,7 +12,7 @@ for item in target_directory.iterdir():
 
 def main(target_dir, fname_seq, out_dir):
     isoform_list = ["ENST00000256078.8"]
-    for item in target_directory.iterdir():
+    for item in target_dir.iterdir():
         if item.is_dir():
             print(f"Found folder: {item}")
             fname_sorted = (
