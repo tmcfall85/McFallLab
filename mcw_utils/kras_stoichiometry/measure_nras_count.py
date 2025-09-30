@@ -3,12 +3,6 @@ import pandas as pd
 from pathlib import Path
 import argparse
 
-target_directory = Path("path/to/your/directory")  # Replace with your directory
-
-for item in target_directory.iterdir():
-    if item.is_dir():
-        print(f"Found folder: {item}")
-
 
 def main(target_dir, fname_seq, out_dir):
     isoform_list = ["ENST00000256078.8"]
