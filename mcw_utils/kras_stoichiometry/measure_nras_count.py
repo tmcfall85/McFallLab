@@ -5,6 +5,7 @@ import argparse
 
 
 def main(target_dir, fname_seq, out_dir):
+    target_dir = Path(target_dir)
     isoform_list = ["ENST00000256078.8"]
     for item in target_dir.iterdir():
         if item.is_dir():
