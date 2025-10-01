@@ -43,7 +43,7 @@ class Distribution(Isoform):
 
             ls_hist = np.histogram(
                 left_start,
-                bins=self.sequences[isoform] // 25,
+                bins=len(self.sequences[isoform]) // 25,
                 range=(0, len(self.sequences[isoform])),
             )
 
@@ -51,7 +51,7 @@ class Distribution(Isoform):
 
             rs_hist = np.histogram(
                 right_start,
-                bins=self.sequences[isoform] // 25,
+                bins=len(self.sequences[isoform]) // 25,
                 range=(0, len(self.sequences[isoform])),
             )
             rs_hist_dist = rv_histogram(rs_hist, density=False)
