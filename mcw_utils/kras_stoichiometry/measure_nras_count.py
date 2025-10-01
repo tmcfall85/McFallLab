@@ -25,7 +25,6 @@ def main(target_dir, fname_seq, out_dir):
                     isoform_list=isoform_list,
                 )
 
-                print(f"Creating output directory: {out_dir}")
                 print("Measuring distributions")
                 isoforms.measure_distributions()
                 left_hist_dist = isoforms.left_start_distributions[isoform_list[0]]
@@ -38,6 +37,7 @@ def main(target_dir, fname_seq, out_dir):
                 print(f"Error processing {acc_num}: {e}")
                 continue
 
+    print(f"Creating output directory: {out_dir}")
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
