@@ -6,7 +6,7 @@ import argparse
 
 def main(target_dir, fname_seq, out_dir):
     target_dir = Path(target_dir)
-    isoform_list = ["ENST00000256078.8"]
+    isoform_list = ["ENST00000369535.4"]
     left_count = {}
     right_count = {}
     left_edge = {}
@@ -42,14 +42,14 @@ def main(target_dir, fname_seq, out_dir):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     pd.DataFrame(left_count).to_csv(
-        out_dir / f"kras_left_start_distribution.csv", index=False
+        out_dir / f"nras_left_start_distribution.csv", index=False
     )
 
     pd.DataFrame(right_count).to_csv(
-        out_dir / f"kras_right_start_distribution.csv", index=False
+        out_dir / f"nras_right_start_distribution.csv", index=False
     )
-    pd.DataFrame(left_edge).to_csv(out_dir / f"kras_left_start_edge.csv", index=False)
-    pd.DataFrame(right_edge).to_csv(out_dir / f"kras_right_start_edge.csv", index=False)
+    pd.DataFrame(left_edge).to_csv(out_dir / f"nras_left_start_edge.csv", index=False)
+    pd.DataFrame(right_edge).to_csv(out_dir / f"nras_right_start_edge.csv", index=False)
 
 
 if __name__ == "__main__":
