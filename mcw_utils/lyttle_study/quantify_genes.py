@@ -178,6 +178,24 @@ def main(folder_path):
     ### erasers
     SIRT7 = "ENSG00000187531"
 
+    # Basal vs classic genes
+    GPR87 = "ENSG00000138271"
+    REG4 = "ENSG00000134193"
+    KRT6A = "ENSG00000205420"
+    ANXA10 = "ENSG00000109511"
+    BCAR3 = "ENSG00000137936"
+    GATA6 = "ENSG00000141448"
+    PTGES = "ENSG00000148344"
+    CLDN18 = "ENSG00000066405"
+    ITGA3 = "ENSG00000005884"
+    LGALS4 = "ENSG00000282992"
+    C16orf74 = "ENSG00000154102"
+    DDC = "ENSG00000132437"
+    S100A2 = "ENSG00000196754"
+    SLC40A1 = "ENSG00000138449"
+    KRT5 = "ENSG00000186081"
+    CLRN3 = "ENSG00000180745"
+
     up = {
         "TPO": TPO,
         "MMP1": MMP1,
@@ -317,6 +335,25 @@ def main(folder_path):
         "SIRT7": SIRT7,
     }
 
+    basal_classic = {
+        "GPR87": GPR87,
+        "REG4": REG4,
+        "KRT6A": KRT6A,
+        "ANXA10": ANXA10,
+        "BCAR3": BCAR3,
+        "GATA6": GATA6,
+        "PTGES": PTGES,
+        "CLDN18": CLDN18,
+        "ITGA3": ITGA3,
+        "LGALS4": LGALS4,
+        "C16orf74": C16orf74,
+        "DDC": DDC,
+        "S100A2": S100A2,
+        "SLC40A1": SLC40A1,
+        "KRT5": KRT5,
+        "CLRN3": CLRN3,
+    }
+
     data = {}
     data["accession_id"] = []
     # data = init_data(up, data)
@@ -325,16 +362,17 @@ def main(folder_path):
     # data = init_data(sweeny, data)
     # data = init_data(adriano, data)
     # data = init_data(tommy, data)
-    data = init_data(m1a, data)
-    data = init_data(m7g, data)
-    data = init_data(AtoI, data)
+    # data = init_data(m1a, data)
+    # data = init_data(m7g, data)
+    # data = init_data(AtoI, data)
     # data = init_data(m6Am, data)
-    data = init_data(psi, data)
+    # data = init_data(psi, data)
     # data = init_data(m6a, data)
-    data = init_data(m5c, data)
-    data = init_data(mcm5s2u, data)
-    data = init_data(mcm5u, data)
-    data = init_data(ac4c, data)
+    # data = init_data(m5c, data)
+    # data = init_data(mcm5s2u, data)
+    # data = init_data(mcm5u, data)
+    # data = init_data(ac4c, data)
+    data = init_data(basal_classic, data)
 
     search_dir = Path(folder_path)
     rsem_name = "Aligned.toTranscriptome.out_rsem.genes.results"
@@ -355,16 +393,17 @@ def main(folder_path):
                             # data = pull_tpm(sweeny, dfi, data)
                             # data = pull_tpm(adriano, dfi, data)
                             # data = pull_tpm(tommy, dfi, data)
-                            data = pull_tpm(m1a, dfi, data)
-                            data = pull_tpm(m7g, dfi, data)
-                            data = pull_tpm(AtoI, dfi, data)
+                            # data = pull_tpm(m1a, dfi, data)
+                            # data = pull_tpm(m7g, dfi, data)
+                            # data = pull_tpm(AtoI, dfi, data)
                             # data = pull_tpm(m6Am, dfi, data)
-                            data = pull_tpm(psi, dfi, data)
+                            # data = pull_tpm(psi, dfi, data)
                             # data = pull_tpm(m6a, dfi, data)
-                            data = pull_tpm(m5c, dfi, data)
-                            data = pull_tpm(mcm5s2u, dfi, data)
-                            data = pull_tpm(mcm5u, dfi, data)
-                            data = pull_tpm(ac4c, dfi, data)
+                            # data = pull_tpm(m5c, dfi, data)
+                            # data = pull_tpm(mcm5s2u, dfi, data)
+                            # data = pull_tpm(mcm5u, dfi, data)
+                            # data = pull_tpm(ac4c, dfi, data)
+                            data = pull_tpm(basal_classic, dfi, data)
 
     df = pd.DataFrame(data)
     fname = f"gene_expression_results_{date.today()}.csv"
