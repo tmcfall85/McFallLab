@@ -83,6 +83,101 @@ def main(folder_path):
     HRAS = "ENSG00000174775.16"
     NRAS = "ENSG00000213281.4"
 
+    # RNA modifications - https://pmc.ncbi.nlm.nih.gov/articles/PMC10447785/pdf/43556_2023_Article_139.pdf fig1
+    ## m1A
+    ### writers
+    TRMT10C = "ENSG00000174173"
+    TRMT6 = "ENSG00000089195"
+    TRMT61 = "ENSG00000166166"
+    ### readers
+    YTHD1 = "ENSG00000149658"
+    YTHD3 = "ENSG00000185728"
+    ### erasers
+    ALKBH1 = "ENSG00000100601"
+    ALKBH3 = "ENSG00000166199"
+    ALKBH7 = "ENSG00000125652"
+
+    ## m7G
+    ### writers
+    METTL1 = "ENSG00000037897"
+    WBSCR22 = "ENSG00000071462"
+    RNMT = "ENSG00000101654"
+    ### readers
+    ### erasers
+
+    ## AtoI
+    ### writers
+    ADAR1 = "ENSG00000160710"
+    ADAR2 = "ENSG00000197381"
+    ADAT2 = "ENSG00000189007"
+    ### readers
+    ### erasers
+
+    ## m6Am
+    ### writers
+    METTL4 = "ENSG00000101574"
+    PCIF1 = "ENSG00000100982"
+    ### readers
+    ### erasers
+    FTO = "ENSG00000140718"
+
+    # psi
+    ### writers
+    PUS1 = "ENSG00000177192"
+    PUS7L = "ENSG00000129317"
+    RPUSD1 = "ENSG00000007376"
+    DKC1 = "ENSG00000130826"
+    ### readers
+    ### erasers
+
+    ## m6A
+    ### writers
+    METTL3 = "ENSG00000165819"
+    METTL5 = "ENSG00000138382"
+    METTL14 = "ENSG00000145388"
+    METTL16 = "ENSG00000127804"
+    ZCCHC4 = "ENSG00000168228"
+    ### readers
+    YTHDF1 = "ENSG00000149658"
+    YTHDC1 = "ENSG00000275272"
+    YTHDC2 = "ENSG00000047188"
+    ### erasers
+    ALKBH5 = "ENSG00000091542"
+
+    # m5C
+    ### writers
+    NSUN1 = "ENSG00000111641"
+    DNMT2 = "ENSG00000107614"
+    ### readers
+    # ALYREF = ""
+    YTHDF2 = "ENSG00000198492"
+    YBX1 = "ENSG00000065978"
+    ### erasers
+    TET1 = "ENSG00000138336"
+    TET2 = "ENSG00000168769"
+
+    # mcm5s2U
+    ### writers
+    ELP1 = "ENSG00000070061"
+    ELP3 = "ENSG00000134014"
+    CTU1 = "ENSG00000142544"
+    CTU2 = "ENSG00000174177"
+    ### readers
+    ### erasers
+
+    # mcm5U
+    ### writers
+    ALKBH8 = "ENSG00000137760"
+    ### readers
+    ### erasers
+
+    # ac4C
+    ### writers
+    NAT10 = "ENSG00000135372"
+    ### readers
+    ### erasers
+    SIRT7 = "ENSG00000187531"
+
     up = {
         "TPO": TPO,
         "MMP1": MMP1,
@@ -149,14 +244,97 @@ def main(folder_path):
         "NRAS": NRAS,
     }
 
+    m1a = {
+        "TRMT10C": TRMT10C,
+        "TRMT6": TRMT6,
+        "TRMT61": TRMT61,
+        "YTHD1": YTHD1,
+        "YTHD3": YTHD3,
+        "ALKBH1": ALKBH1,
+        "ALKBH3": ALKBH3,
+        "ALKBH7": ALKBH7,
+    }
+
+    m7g = {
+        "METTL1": METTL1,
+        "WBSCR22": WBSCR22,
+        "RNMT": RNMT,
+    }
+
+    AtoI = {
+        "ADAR1": ADAR1,
+        "ADAR2": ADAR2,
+        "ADAT2": ADAT2,
+    }
+
+    m6Am = {
+        "METTL4": METTL4,
+        "PCIF1": PCIF1,
+        "FTO": FTO,
+    }
+
+    psi = {
+        "PUS1": PUS1,
+        "PUS7L": PUS7L,
+        "RPUSD1": RPUSD1,
+        "DKC1": DKC1,
+    }
+
+    m6a = {
+        "METTL3": METTL3,
+        "METTL5": METTL5,
+        "METTL14": METTL14,
+        "METTL16": METTL16,
+        "ZCCHC4": ZCCHC4,
+        "YTHDF1": YTHDF1,
+        "YTHDC1": YTHDC1,
+        "YTHDC2": YTHDC2,
+        "ALKBH5": ALKBH5,
+    }
+
+    m5c = {
+        "NSUN1": NSUN1,
+        "DNMT2": DNMT2,
+        "YTHDF2": YTHDF2,
+        "YBX1": YBX1,
+        "TET1": TET1,
+        "TET2": TET2,
+    }
+
+    mcm5s2u = {
+        "ELP1": ELP1,
+        "ELP3": ELP3,
+        "CTU1": CTU1,
+        "CTU2": CTU2,
+    }
+
+    mcm5u = {
+        "ALKBH8": ALKBH8,
+    }
+
+    ac4c = {
+        "NAT10": NAT10,
+        "SIRT7": SIRT7,
+    }
+
     data = {}
     data["accession_id"] = []
-    data = init_data(up, data)
-    data = init_data(down, data)
-    data = init_data(housekeeping, data)
-    data = init_data(sweeny, data)
-    data = init_data(adriano, data)
-    data = init_data(tommy, data)
+    # data = init_data(up, data)
+    # data = init_data(down, data)
+    # data = init_data(housekeeping, data)
+    # data = init_data(sweeny, data)
+    # data = init_data(adriano, data)
+    # data = init_data(tommy, data)
+    data = init_data(m1a, data)
+    data = init_data(m7g, data)
+    data = init_data(AtoI, data)
+    # data = init_data(m6Am, data)
+    data = init_data(psi, data)
+    # data = init_data(m6a, data)
+    data = init_data(m5c, data)
+    data = init_data(mcm5s2u, data)
+    data = init_data(mcm5u, data)
+    data = init_data(ac4c, data)
 
     search_dir = Path(folder_path)
     rsem_name = "Aligned.toTranscriptome.out_rsem.genes.results"
@@ -171,12 +349,22 @@ def main(folder_path):
 
                             dfi = pd.read_csv(fname, sep="\t")
                             data["accession_id"].append(acc_num)
-                            data = pull_tpm(up, dfi, data)
-                            data = pull_tpm(down, dfi, data)
-                            data = pull_tpm(housekeeping, dfi, data)
-                            data = pull_tpm(sweeny, dfi, data)
-                            data = pull_tpm(adriano, dfi, data)
-                            data = pull_tpm(tommy, dfi, data)
+                            # data = pull_tpm(up, dfi, data)
+                            # data = pull_tpm(down, dfi, data)
+                            # data = pull_tpm(housekeeping, dfi, data)
+                            # data = pull_tpm(sweeny, dfi, data)
+                            # data = pull_tpm(adriano, dfi, data)
+                            # data = pull_tpm(tommy, dfi, data)
+                            data = pull_tpm(m1a, dfi, data)
+                            data = pull_tpm(m7g, dfi, data)
+                            data = pull_tpm(AtoI, dfi, data)
+                            # data = pull_tpm(m6Am, dfi, data)
+                            data = pull_tpm(psi, dfi, data)
+                            # data = pull_tpm(m6a, dfi, data)
+                            data = pull_tpm(m5c, dfi, data)
+                            data = pull_tpm(mcm5s2u, dfi, data)
+                            data = pull_tpm(mcm5u, dfi, data)
+                            data = pull_tpm(ac4c, dfi, data)
 
     df = pd.DataFrame(data)
     fname = f"gene_expression_results_{date.today()}.csv"
