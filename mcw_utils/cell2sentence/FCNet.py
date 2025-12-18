@@ -168,16 +168,40 @@ def train_fc_network(
         print(f"  Train set size: {len(train_index)}")
         print(f"  Validation set size: {len(val_index)}")
 
-        # Access the data for training and validation
-        # X_train, X_val = X[train_index], X[val_index]
-        # y_train, y_val = y[train_index], y[val_index]
-        train_sampler = SubsetRandomSampler(train_index)
-        validation_sampler = SubsetRandomSampler(val_index)
+        # Create Subset objects for clean indexing
+        train_subset = Subset(dataset, train_index)
+        val_subset = Subset(dataset, val_index)
 
-        train_loader = DataLoader(dataset, batch_size=batch_size, sampler=train_sampler)
-        val_loader = DataLoader(
-            dataset, batch_size=batch_size, sampler=validation_sampler
-        )
+        if n_classes > 1:
+            # Compute class counts on the training subset
+            y_train = y[train_index]
+            classes, counts = np.unique(y_train, return_counts=True)
+            print("  class counts (train):", dict(zip(classes, counts)))
+
+            # Inverse-frequency class weights -> higher weight for rarer classes
+            class_weights = {int(c): 1.0 / cnt for c, cnt in zip(classes, counts)}
+
+            # Per-sample weights for the training subset
+            sample_weights = np.array(
+                [class_weights[int(lbl)] for lbl in y_train], dtype=np.float32
+            )
+            sample_weights_t = torch.from_numpy(sample_weights)
+
+            # WeightedRandomSampler will oversample minority classes (replacement=True)
+            weighted_sampler = torch.utils.data.sampler.WeightedRandomSampler(
+                weights=sample_weights_t,
+                num_samples=len(sample_weights_t),
+                replacement=True,
+            )
+
+            train_loader = DataLoader(
+                train_subset, batch_size=batch_size, sampler=weighted_sampler
+            )
+            val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False)
+        else:
+            # For regression (continuous y) just use standard sampling
+            train_loader = DataLoader(train_subset, batch_size=batch_size, shuffle=True)
+            val_loader = DataLoader(val_subset, batch_size=batch_size, shuffle=False)
 
         # train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
         # val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
