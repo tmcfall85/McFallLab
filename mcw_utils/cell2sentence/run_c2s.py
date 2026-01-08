@@ -50,7 +50,7 @@ def main(prompt_in):
         df_so_far.index.set_names(["accession_id", "layer_id"], inplace=True)
         df_so_far.to_csv(out_filename)
         print(f"saving df snapshot, len{len(df_so_far)}")
-    print(f"done: {out_filename}")
+    print(f"done: {out_filename.split('.csv')[0]}")
 
 
 if __name__ == "__main__":
