@@ -4,7 +4,7 @@ import pandas as pd
 label_data = pd.read_csv("/mnt/c/Users/msochor/Downloads/big_data_with_labels.csv")
 model_data = pd.read_csv("/mnt/c/Users/msochor/Downloads/big_data_for_c2s_modeling.csv")
 string_db_data = pd.read_csv("/home/msochor/repos/scratch/7_network_string_db.csv")
-avg_label = "late"
+avg_label = "mid"
 
 avg_mid_late_data = label_data[
     label_data.recurrence_time_sur.isin(["early", "mid", "late"])
@@ -62,9 +62,7 @@ for c in big_data_genes.columns:
         prompts.append(prompt)
         acc_ids.append(c)
 prompt_df = pd.DataFrame({"accession_id": acc_ids, "prompt": prompts})
-out_fname = (
-    f"prompts_vs_avg_stringdb_{gene_count}_{str(datetime.now()).replace(' ','_')}"
-)
+out_fname = f"prompts_vs_avg_{avg_label}_stringdb_{gene_count}_{str(datetime.now()).replace(' ','_')}"
 prompt_df.to_csv(
     f"{out_fname}.csv",
     index=False,
