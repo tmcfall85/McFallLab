@@ -4,7 +4,7 @@ import pandas as pd
 label_data = pd.read_csv("/mnt/c/Users/msochor/Downloads/big_data_with_labels.csv")
 model_data = pd.read_csv("/mnt/c/Users/msochor/Downloads/big_data_for_c2s_modeling.csv")
 string_db_data = pd.read_csv("/home/msochor/repos/scratch/7_network_string_db.csv")
-avg_label = "mid"
+avg_label = "late"
 
 avg_mid_late_data = label_data[
     label_data.recurrence_time_sur.isin(["early", "mid", "late"])

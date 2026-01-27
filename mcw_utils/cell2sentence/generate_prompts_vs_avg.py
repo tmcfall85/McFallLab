@@ -53,7 +53,9 @@ for c in big_data_genes.columns:
         prompts.append(prompt)
         acc_ids.append(c)
 prompt_df = pd.DataFrame({"accession_id": acc_ids, "prompt": prompts})
-out_fname = f"prompts_vs_avg_{gene_count}_{str(datetime.now()).replace(' ','_')}"
+out_fname = (
+    f"prompts_vs_avg_{avg_label}_{gene_count}_{str(datetime.now()).replace(' ','_')}"
+)
 prompt_df.to_csv(
     f"{out_fname}.csv",
     index=False,
