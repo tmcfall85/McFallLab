@@ -76,90 +76,154 @@ def _read_tempus_files_in_directory(directory_path):
                         if report_type[-1] == "DNA":
                             if data["metadata"]["schemaVersion"] in ["1.3.1", "1.3.2"]:
                                 msi.append(data["results"]["msiStatus"] == "stable")
+                            elif data["metadata"]["schemaVersion"] in ["v3.3.0"]:
+                                msi.append(data["microsatelliteInstability"]["status"])
                             else:
                                 msi.append(
                                     data["results"]["microsatelliteInstability"][
                                         "status"
                                     ]
                                 )
-                            tumor_mutational_burden.append(
-                                data["results"]["tumorMutationalBurden"]
-                            )
-                            tumor_mutation_burden_percentile.append(
-                                data["results"]["tumorMutationBurdenPercentile"]
-                            )
-                            mut_variants = []
-                            mut_kras_variants = []
-                            muts = data["results"][
-                                "somaticPotentiallyActionableMutations"
-                            ]
-                            for mut in muts:
-                                if mut["gene"] == "KRAS":
-                                    for variant in mut["variants"]:
+                            if data["metadata"]["schemaVersion"] in ["v3.3.0"]:
+                                tumor_mutational_burden.append(
+                                    data["genomicVariants"]["tumorMutationalBurden"][
+                                        "tmb"
+                                    ]
+                                )
+                                tumor_mutation_burden_percentile.append(
+                                    data["genomicVariants"]["tumorMutationalBurden"][
+                                        "tmbPercentile"
+                                    ]
+                                )
+                                spa_muts = data["genomicVariants"][
+                                    "potentiallyActionable"
+                                ]
+                                sbrv_muts = data["genomicVariants"][
+                                    "biologicallyRelevant"
+                                ]
+                                svus_muts = data["genomicVariants"][
+                                    "unknownSignificance"
+                                ]
+                                mut_variants = []
+                                mut_kras_variants = []
+
+                                for variant in spa_muts["variants"]:
+                                    if (
+                                        variant["variantDetails"][0]["display"]
+                                        == "KRAS"
+                                    ):
                                         mut_kras_variants.append(
-                                            variant["mutationEffect"]
+                                            variant["variantDetails"][0]["pVar"]
                                         )
                                     has_kras_variant = True
-
-                                for variant in mut["variants"]:
                                     mut_variants.append(
-                                        f'{mut["gene"]}:{variant["mutationEffect"]}:somatic:potentially_actionable:{variant["allelicFraction"]}'
+                                        f'{variant["variantDetails"][0]["display"]}:{variant["variantDetails"][0]["pVar"]}:somatic:potentially_actionable:{variant["variantDetails"][0]["allelicFraction"]}'
                                     )
 
-                            muts = data["results"][
-                                "somaticBiologicallyRelevantVariants"
-                            ]
-
-                            for mut in muts:
-                                if mut["gene"] == "KRAS":
-                                    mut_kras_variants.append(mut["mutationEffect"])
+                                for variant in sbrv_muts["variants"]:
+                                    if (
+                                        variant["variantDetails"][0]["display"]
+                                        == "KRAS"
+                                    ):
+                                        mut_kras_variants.append(
+                                            variant["variantDetails"][0]["pVar"]
+                                        )
                                     has_kras_variant = True
-                                mut_variants.append(
-                                    f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:biologically_relevant:{mut["allelicFraction"]}'
-                                )
+                                    mut_variants.append(
+                                        f'{variant["variantDetails"][0]["display"]}:{variant["variantDetails"][0]["pVar"]}:somatic:biologically_relevant:{variant["variantDetails"][0]["allelicFraction"]}'
+                                    )
 
-                            muts = data["results"][
-                                "somaticVariantsOfUnknownSignificance"
-                            ]
-                            for mut in muts:
-                                if mut["gene"] == "KRAS":
-                                    mut_kras_variants.append(mut["mutationEffect"])
+                                for variant in svus_muts["variants"]:
+                                    if (
+                                        variant["variantDetails"][0]["display"]
+                                        == "KRAS"
+                                    ):
+                                        mut_kras_variants.append(
+                                            variant["variantDetails"][0]["pVar"]
+                                        )
                                     has_kras_variant = True
-                                mut_variants.append(
-                                    f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:unknown_significance:{mut["allelicFraction"]}'
-                                )
+                                    mut_variants.append(
+                                        f'{variant["variantDetails"][0]["display"]}:{variant["variantDetails"][0]["pVar"]}:somatic:unknown_significance:{variant["variantDetails"][0]["allelicFraction"]}'
+                                    )
 
-                            muts = data["results"]["fusionVariants"]
-                            for mut in muts:
-                                mut_variants.append(
-                                    f'gene5={mut["gene5"]}-gene3={mut["gene3"]}:{mut["variantDescription"]}:fusion:unknown_significance:'
+                            else:
+                                tumor_mutational_burden.append(
+                                    data["results"]["tumorMutationalBurden"]
                                 )
+                                tumor_mutation_burden_percentile.append(
+                                    data["results"]["tumorMutationBurdenPercentile"]
+                                )
+                                spa_muts = data["results"][
+                                    "somaticPotentiallyActionableMutations"
+                                ]
+                                sbrv_muts = data["results"][
+                                    "somaticBiologicallyRelevantVariants"
+                                ]
+                                svus_muts = data["results"][
+                                    "somaticVariantsOfUnknownSignificance"
+                                ]
+                                fv_muts = data["results"]["fusionVariants"]
+                                irv_muts = data["results"]["inheritedRelevantVariants"][
+                                    "values"
+                                ]
+                                ivus_muts = data["results"][
+                                    "inheritedVariantsOfUnknownSignificance"
+                                ]["values"]
+                                mut_variants = []
+                                mut_kras_variants = []
+                                for mut in spa_muts:
+                                    if mut["gene"] == "KRAS":
+                                        for variant in mut["variants"]:
+                                            mut_kras_variants.append(
+                                                variant["mutationEffect"]
+                                            )
+                                        has_kras_variant = True
 
-                            muts = data["results"]["inheritedRelevantVariants"][
-                                "values"
-                            ]
-                            for mut in muts:
-                                if mut["gene"] == "KRAS":
-                                    mut_kras_variants.append(mut["mutationEffect"])
-                                    has_kras_variant = True
-                                if "allelicFraction" in mut.keys():
-                                    allelic_fraction = mut["allelicFraction"]
-                                else:
-                                    allelic_fraction = ""
-                                mut_variants.append(
-                                    f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:biologically_relevant:{allelic_fraction}'
-                                )
+                                    for variant in mut["variants"]:
+                                        mut_variants.append(
+                                            f'{mut["gene"]}:{variant["mutationEffect"]}:somatic:potentially_actionable:{variant["allelicFraction"]}'
+                                        )
 
-                            muts = data["results"][
-                                "inheritedVariantsOfUnknownSignificance"
-                            ]["values"]
-                            for mut in muts:
-                                if mut["gene"] == "KRAS":
-                                    mut_kras_variants.append(mut["mutationEffect"])
-                                    has_kras_variant = True
-                                mut_variants.append(
-                                    f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:unknown_significance:{mut["allelicFraction"]}'
-                                )
+                                for mut in sbrv_muts:
+                                    if mut["gene"] == "KRAS":
+                                        mut_kras_variants.append(mut["mutationEffect"])
+                                        has_kras_variant = True
+                                    mut_variants.append(
+                                        f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:biologically_relevant:{mut["allelicFraction"]}'
+                                    )
+
+                                for mut in svus_muts:
+                                    if mut["gene"] == "KRAS":
+                                        mut_kras_variants.append(mut["mutationEffect"])
+                                        has_kras_variant = True
+                                    mut_variants.append(
+                                        f'{mut["gene"]}:{mut["mutationEffect"]}:somatic:unknown_significance:{mut["allelicFraction"]}'
+                                    )
+
+                                for mut in fv_muts:
+                                    mut_variants.append(
+                                        f'gene5={mut["gene5"]}-gene3={mut["gene3"]}:{mut["variantDescription"]}:fusion:unknown_significance:'
+                                    )
+
+                                for mut in irv_muts:
+                                    if mut["gene"] == "KRAS":
+                                        mut_kras_variants.append(mut["mutationEffect"])
+                                        has_kras_variant = True
+                                    if "allelicFraction" in mut.keys():
+                                        allelic_fraction = mut["allelicFraction"]
+                                    else:
+                                        allelic_fraction = ""
+                                    mut_variants.append(
+                                        f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:biologically_relevant:{allelic_fraction}'
+                                    )
+
+                                for mut in ivus_muts:
+                                    if mut["gene"] == "KRAS":
+                                        mut_kras_variants.append(mut["mutationEffect"])
+                                        has_kras_variant = True
+                                    mut_variants.append(
+                                        f'{mut["gene"]}:{mut["mutationEffect"]}:inherited:unknown_significance:{mut["allelicFraction"]}'
+                                    )
                             if len(mut_variants) == 0:
                                 mut_variants.append("none:none:none:none:none")
                             variants.append("|".join(mut_variants))
@@ -175,21 +239,40 @@ def _read_tempus_files_in_directory(directory_path):
                         else:
                             kras_variants.append("|".join(mut_kras_variants))
 
+                        if data["metadata"]["schemaVersion"] in ["v3.3.0"]:
+                            bio_inf_pipeline_version.append(
+                                data["report"]["bioInfoPipeline"]
+                            )
+
+                        else:
+                            bio_inf_pipeline_version.append(
+                                data["report"]["bioInfPipeline"]
+                            )
+
                         report_id.append(data["report"]["reportId"])
-                        bio_inf_pipeline_version.append(
-                            data["report"]["bioInfPipeline"]
-                        )
                         tempus_id.append(data["patient"]["tempusId"])
                         test_code.append(data["order"]["test"]["code"])
                         specimen_count.append(len(data["specimens"]))
                         has_tumor_specimen = False
                         for specimen in data["specimens"]:
-                            if specimen["sampleCategory"] == "tumor":
+                            # one patient has two tumor specimens which is why i put this "and" logic in
+                            # i dont know this code will just take the first sample for that person
+                            if (
+                                specimen["sampleCategory"] == "tumor"
+                                and has_tumor_specimen == False
+                            ):
+
                                 has_tumor_specimen = True
                                 specimen_sample_category.append(
                                     specimen["sampleCategory"]
                                 )
-                                specimen_sample_site.append(specimen["sampleSite"])
+                                if data["metadata"]["schemaVersion"] in ["v3.3.0"]:
+                                    specimen_sample_site.append(
+                                        specimen["primarySampleSite"]
+                                    )
+
+                                else:
+                                    specimen_sample_site.append(specimen["sampleSite"])
                                 specimen_date.append(specimen["collectionDate"])
                                 specimen_block_id.append(
                                     specimen["institutionData"]["blockId"]
@@ -201,9 +284,15 @@ def _read_tempus_files_in_directory(directory_path):
                             specimen_sample_category.append(
                                 data["specimens"][0]["sampleCategory"]
                             )
-                            specimen_sample_site.append(
-                                data["specimens"][0]["sampleSite"]
-                            )
+                            if data["metadata"]["schemaVersion"] in ["v3.3.0"]:
+                                specimen_sample_site.append(
+                                    data["specimens"][0]["primarySampleSite"]
+                                )
+
+                            else:
+                                specimen_sample_site.append(
+                                    data["specimens"][0]["sampleSite"]
+                                )
                             specimen_date.append(data["specimens"][0]["collectionDate"])
                             specimen_block_id.append(
                                 data["specimens"][0]["institutionData"]["blockId"]
