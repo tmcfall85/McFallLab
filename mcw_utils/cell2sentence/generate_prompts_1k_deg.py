@@ -2,13 +2,15 @@ from datetime import datetime
 import pandas as pd
 
 label_data = pd.read_csv("/mnt/c/Users/msochor/Downloads/big_data_with_labels.csv")
-model_data = pd.read_csv("/mnt/c/Users/msochor/Downloads/big_data_for_c2s_modeling.csv")
+model_data = pd.read_csv(
+    "/mnt/c/Users/msochor/Downloads/big_data_for_c2s_modeling_3_10_26.csv"
+)
 
-early_mid_late_data = label_data[
-    label_data.recurrence_time_sur.isin(["early", "mid", "late"])
-]
-early_mid_late_panc_data = early_mid_late_data[early_mid_late_data.is_panc == True]
-print("early_mid_late_panc_data shape:", early_mid_late_panc_data.shape)
+# early_mid_late_data = label_data[
+#    label_data.recurrence_time_sur.isin(["early", "mid", "late"])
+# ]
+# early_mid_late_panc_data = early_mid_late_data[early_mid_late_data.is_panc == True]
+# print("early_mid_late_panc_data shape:", early_mid_late_panc_data.shape)
 prompts = []
 acc_ids = []
 df_sig_1k = model_data[model_data.top_1000_sig == True].copy()
@@ -17,7 +19,7 @@ df_sig_1k.set_index("gene_name", inplace=True)
 big_data_genes = df_sig_1k.drop(columns=["top_1000_sig", "top_500_sig"])
 gene_count = 0
 for c in big_data_genes.columns:
-    if c in early_mid_late_panc_data.accession_id.values:
+    if True:  # c in early_mid_late_panc_data.accession_id.values:
         # print(f"Acc id: {c}")
         df_acc_id = big_data_genes[c].copy()
         df_acc_id.sort_values(ascending=False, inplace=True)
