@@ -76,6 +76,7 @@ class FCNetReg(nn.Module):
 def train_fc_network(
     X_np: np.ndarray,
     y_np: np.ndarray,
+    acc_ids: list,
     hidden_sizes: Sequence[int] = (512, 128),
     n_classes: int = 4,
     epochs: int = 5,
@@ -160,6 +161,7 @@ def train_fc_network(
     all_preds = []
     all_preds_proba = []
     all_y_vals = []
+    all_acc_ids = []
     histories = []
     models = []
 
@@ -171,6 +173,10 @@ def train_fc_network(
         # Create Subset objects for clean indexing
         train_subset = Subset(dataset, train_index)
         val_subset = Subset(dataset, val_index)
+        val_acc_ids = []
+        for i in val_index:
+            val_acc_ids.append(acc_ids[i])
+        all_acc_ids.append(val_acc_ids)
 
         if n_classes > 1:
             # Compute class counts on the training subset
@@ -310,4 +316,4 @@ def train_fc_network(
                     f"Epoch {epoch}/{epochs}  train_loss={train_loss:.4f} train_acc={train_acc:.3f}  val_loss={val_loss:.4f} val_acc={val_acc:.3f}"
                 )
 
-    return models, histories, all_preds, all_preds_proba, all_y_vals
+    return models, histories, all_preds, all_preds_proba, all_y_vals, all_acc_ids
