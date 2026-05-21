@@ -4,6 +4,7 @@ import plotly.express as px
 import pandas as pd
 
 import numpy as np
+from FCNet_prekfold import train_fc_network_prekfold
 from FCNet import train_fc_network
 from FCNet_single import train_fc_network_single
 from sklearn.metrics import confusion_matrix
@@ -11,8 +12,9 @@ from sklearn.metrics import roc_curve, roc_auc_score
 import matplotlib.pyplot as plt
 
 
-def main(embeddings_in, holdout_embeddings_in=None):
-    embeddings_df = pd.read_csv(f"{embeddings_in}.csv")
+def embedding_to_X_y(embeddings_in, max_layer):
+
+    embeddings_df = pd.read_csv(f"embeddings/{embeddings_in}.csv")
     embeddings_df.set_index(["accession_id", "layer_id"], inplace=True)
     label_data = pd.read_csv("/mnt/c/Users/msochor/Downloads/big_data_with_labels.csv")
 
@@ -32,13 +34,14 @@ def main(embeddings_in, holdout_embeddings_in=None):
         labels={"color": "layer_id"},
     )
 
-    fig.write_html(f"tsne_plot_{embeddings_in}.html")
+    fig.write_html(f"tsne_plots/tsne_plot_{embeddings_in}.html")
 
-    max_layer = 9
     X = []
     y = []
+    acc_ids = []
     for i in range(len(early_mid_late_panc_data.accession_id.values)):
         row = early_mid_late_panc_data.iloc[i]
+        acc_ids.append(row.accession_id)
         embeddings = []
         for i in range(max_layer):
             embeddings.append(
@@ -55,15 +58,49 @@ def main(embeddings_in, holdout_embeddings_in=None):
             X.append(embeddings)
     X = np.array(X).astype(np.float32)
     y = np.array(y)
-    models, histories, all_preds, all_preds_proba, all_y_vals = train_fc_network(
-        X,
-        y,
-        hidden_sizes=(512, 128),
-        n_classes=3,
-        epochs=15,
-        batch_size=2,
-        lr=1e-3,
-    )
+    return X, y, acc_ids
+
+
+def main(embeddings_in, kfolds_in=None, holdout_embeddings_in=None):
+    max_layer = 9
+    if kfolds_in is not None:
+        Xs = []
+        ys = []
+        acc_ids = []
+        for embedding_in in embeddings_in.split(","):
+            X, y, acc_id = embedding_to_X_y(embedding_in, max_layer)
+            Xs.append(X)
+            ys.append(y)
+            acc_ids.append(acc_id)
+        models, histories, all_preds, all_preds_proba, all_y_vals, all_acc_ids = (
+            train_fc_network_prekfold(
+                Xs,
+                ys,
+                acc_ids,
+                kfolds_in,
+                hidden_sizes=(512, 128),
+                n_classes=3,
+                epochs=15,
+                batch_size=2,
+                lr=1e-3,
+            )
+        )
+    else:
+        X, y, acc_ids = embedding_to_X_y(embeddings_in, max_layer)
+        models, histories, all_preds, all_preds_proba, all_y_vals, all_acc_ids = (
+            train_fc_network(
+                X,
+                y,
+                kfolds_in,
+                acc_ids,
+                hidden_sizes=(512, 128),
+                n_classes=3,
+                epochs=15,
+                batch_size=2,
+                lr=1e-3,
+            )
+        )
+
     val = []
     for history in histories:
         val.append(history["val_acc"][-1])
@@ -74,6 +111,19 @@ def main(embeddings_in, holdout_embeddings_in=None):
         print(f"Confusion matrix for fold {i+1}:")
         cm = confusion_matrix(all_y_vals[i], all_preds[i])
         print(cm)
+
+    combined_all_y_vals = []
+    combined_all_preds = []
+    for all_y_val in all_y_vals:
+        for y_val in all_y_val:
+            combined_all_y_vals.append(y_val)
+    for all_preds in all_preds:
+        for preds in all_preds:
+            combined_all_preds.append(preds)
+
+    print(f"Combined confusion matrix :")
+    cm = confusion_matrix(combined_all_y_vals, combined_all_preds)
+    print(cm)
 
     early_v_mid_late_actual = []
     for all_y_val in all_y_vals:
@@ -86,6 +136,18 @@ def main(embeddings_in, holdout_embeddings_in=None):
     for all_pred in all_preds_proba:
         for y_pred in all_pred:
             early_v_mid_late_pred.append(1 - y_pred[0])
+    early_v_mid_late_acc_id = []
+    for val_acc_ids in all_acc_ids:
+        for val_acc_id in val_acc_ids:
+            early_v_mid_late_acc_id.append(val_acc_id)
+    df_pred_out = pd.DataFrame(
+        {
+            "accession_id": early_v_mid_late_acc_id,
+            "pred": early_v_mid_late_pred,
+            "actual": early_v_mid_late_actual,
+        }
+    )
+    df_pred_out.to_csv(f"predictions_with_acc_ids_{embeddings_in}.csv", index=False)
     fpr, tpr, thresholds = roc_curve(early_v_mid_late_actual, early_v_mid_late_pred)
     plt.figure(figsize=(8, 6))
     plt.plot(fpr, tpr, color="blue", label="ROC curve")
@@ -132,7 +194,7 @@ def main(embeddings_in, holdout_embeddings_in=None):
                 X_holdout.append(embeddings_holdout)
         X_holdout = np.array(X_holdout).astype(np.float32)
         y_holdout = np.array(y_holdout)
-        
+
         model, history, preds, preds_proba, y_vals = train_fc_network_single(
             X,
             y,
@@ -144,7 +206,7 @@ def main(embeddings_in, holdout_embeddings_in=None):
             batch_size=2,
             lr=1e-3,
         )
-        
+
         val = history["val_acc"][-1]
         print(f"Max layers: {max_layer}")
         print(f"Average final validation acc: {val}")
@@ -178,9 +240,17 @@ def main(embeddings_in, holdout_embeddings_in=None):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: python run_modeling.py <embeddings_in>")
+        print(
+            "Usage: python run_modeling.py <embeddings_in> (optional)<kfolds_in> (optional) holdout_embeddings_in"
+        )
         sys.exit(1)
     if len(sys.argv) == 2:
         main(sys.argv[1])
+    elif len(sys.argv) == 3:
+        main(sys.argv[1], kfolds_in=sys.argv[2])
     else:
-        main(sys.argv[1], sys.argv[2])
+        if sys.argv[2].lower() == "none":
+            kfolds_in = None
+        else:
+            kfolds_in = sys.argv[2].lower()
+        main(sys.argv[1], kfolds_in=kfolds_in, holdout_embeddings_in=sys.argv[3])
