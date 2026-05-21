@@ -7,6 +7,14 @@ from pydeseq2.default_inference import DefaultInference
 from pydeseq2.ds import DeseqStats
 from datetime import date
 from tqdm import tqdm
+import numpy as np
+import pickle
+
+from sklearn.model_selection import StratifiedShuffleSplit
+
+# Reproducibility
+RNG_SEED = 42
+np.random.seed(RNG_SEED)
 
 
 def integerize(col):
@@ -49,21 +57,79 @@ def read_and_merge(deg_file, dta_file, merge_file):
 
     print("Merging dataframes...")
     merge_has_mrn = merge_df[merge_df.mrn.notnull()]
+    merge_has_mrn = merge_has_mrn[merge_has_mrn.report_type == "RNA"]
     unique_acc_mrns = (
-        merge_has_mrn.groupby(["accession_id", "mrn", "emrn"])
+        merge_has_mrn.groupby(["accession_id", "mrn", "emrn", "specimen_sample_site"])
         .emr_id.count()
         .reset_index()
     )
+    unique_acc_mrns.drop("emr_id", axis=1, inplace=True)
 
-    deg_with_mrn = deg_df.merge(unique_acc_mrns, on="accession_id", how="left")
-    deg_with_mrn = deg_with_mrn[deg_with_mrn.mrn.notnull()]
+    deg_with_mrn = deg_df.merge(unique_acc_mrns, on="accession_id", how="right")
+    # deg_with_mrn = deg_with_mrn[deg_with_mrn.mrn.notnull()]
     deg_with_pfs = deg_with_mrn.merge(
         dta_df[["mrn", "recurrence_time_sur"]], on="mrn", how="left"
     )
     deg_with_pfs.drop(columns=["mrn", "emrn"], inplace=True)
+    deg_with_pfs.specimen_sample_site.fillna("unknown", inplace=True)
+    deg_with_pfs["is_panc"] = deg_with_pfs.apply(is_panc, axis=1)
+    deg_with_pfs_panc = deg_with_pfs[deg_with_pfs.is_panc == True].copy()
+    deg_with_pfs_panc_eml = deg_with_pfs_panc[
+        deg_with_pfs_panc.recurrence_time_sur.isin(["early", "mid", "late"])
+    ].copy()
+    deg_with_pfs_panc_eml.drop(
+        columns=["is_panc", "specimen_sample_site"], inplace=True
+    )
     print("Distribution of recurrence_time_sur after merges:")
-    print(deg_with_pfs.groupby("recurrence_time_sur").accession_id.count())
-    return deg_with_pfs
+    print(deg_with_pfs_panc_eml.groupby(["recurrence_time_sur"]).accession_id.count())
+    deg_with_pfs_panc_eml.to_csv("deg_with_pfs.csv")
+    return deg_with_pfs_panc_eml
+
+
+def is_panc(row):
+    return row.specimen_sample_site.startswith("Panc")
+
+
+def kfold_run_deseq2(
+    deg_with_pfs, out_file, a_label="early", b_label="late", n_splits=5
+):
+
+    n_val_max = np.ceil(len(deg_with_pfs) * (1 / n_splits))
+    n_val_min = np.floor(len(deg_with_pfs) * (1 / n_splits))
+    print(n_val_min, n_val_max)
+    if (len(deg_with_pfs) - n_val_max) % 2 == 0:
+        n_val = int(n_val_max)
+    else:
+        n_val = int(n_val_min)
+    print(len(deg_with_pfs) - n_val, n_val)
+
+    n_train = len(deg_with_pfs) - n_val
+    # train_ds, val_ds = random_split(dataset, [n_train, n_val])
+
+    # Assuming you have your features X and target y as numpy arrays or pandas DataFrames/Series
+    # X and y must have the same number of samples (e.g., n_samples = 200)
+    # Replace n_samples with the actual number of samples in your dataset
+
+    ss = StratifiedShuffleSplit(n_splits=n_splits, test_size=n_val)
+    splits = {}
+    for i, (train_index, val_index) in enumerate(
+        ss.split(deg_with_pfs, deg_with_pfs.recurrence_time_sur)
+    ):
+        print(f"Fold {i+1}:")
+        print(f"  Train set size: {len(train_index)}")
+        print(f"  Validation set size: {len(val_index)}")
+        splits[i] = (train_index, val_index)
+
+        deg_with_pfs_train = deg_with_pfs.iloc[train_index]
+        run_deseq2(
+            deg_with_pfs_train,
+            f"{out_file}_kfold_{i}",
+            a_label=a_label,
+            b_label=b_label,
+        )
+
+    with open(f"{out_file}_fold_indices.pkl", "wb") as fp:
+        pickle.dump(splits, fp)
 
 
 def run_deseq2(deg_with_pfs, out_file, a_label="early", b_label="late"):
@@ -71,6 +137,7 @@ def run_deseq2(deg_with_pfs, out_file, a_label="early", b_label="late"):
     deg_with_pfs_ab = deg_with_pfs[
         deg_with_pfs.recurrence_time_sur.isin([a_label, b_label])
     ].copy()
+
     deg_with_pfs_ab.set_index("accession_id", inplace=True)
 
     metadata = deg_with_pfs_ab[["recurrence_time_sur", "emr_id"]].copy()
@@ -137,11 +204,18 @@ def run_deseq2(deg_with_pfs, out_file, a_label="early", b_label="late"):
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Usage: python deg.py <deg_file> <dta_file> <merge_file> <out_file>")
+        print(
+            "Usage: python deg.py <deg_file> <dta_file> <merge_file> <k_fold> <out_file>"
+        )
         sys.exit(1)
     deg_file = sys.argv[1]
     dta_file = sys.argv[2]
     merge_file = sys.argv[3]
-    out_file = sys.argv[4] if len(sys.argv) > 4 else "deg_results_with_metadata"
+    use_kfold = sys.argv[4] if len(sys.argv) > 4 else "false"
+    out_file = sys.argv[5] if len(sys.argv) > 5 else "deg_results_with_metadata"
+
     merged = read_and_merge(deg_file, dta_file, merge_file)
-    run_deseq2(merged, out_file)
+    if use_kfold.lower() == "true":
+        kfold_run_deseq2(merged, out_file)
+    else:
+        run_deseq2(merged, out_file)
