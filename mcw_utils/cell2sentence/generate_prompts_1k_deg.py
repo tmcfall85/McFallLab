@@ -36,7 +36,7 @@ for c in big_data_genes.columns:
         prompts.append(prompt)
         acc_ids.append(c)
 prompt_df = pd.DataFrame({"accession_id": acc_ids, "prompt": prompts})
-out_fname = f"prompts_{gene_count}_deg_{str(datetime.now()).replace(' ','_')}"
+out_fname = f"prompts/prompts_{gene_count}_deg_{str(datetime.now()).replace(' ','_')}"
 prompt_df.to_csv(
     f"{out_fname}.csv",
     index=False,
