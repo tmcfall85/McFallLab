@@ -5,8 +5,19 @@ import time
 from pydeseq2.dds import DeseqDataSet
 from pydeseq2.default_inference import DefaultInference
 from pydeseq2.ds import DeseqStats
-from datetime import date
+from datetime import date, datetime
 from tqdm import tqdm
+import numpy as np
+import pickle
+from pathlib import Path
+import json
+
+# Create a single directory
+
+from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
+# Reproducibility
+RNG_SEED = 42
+np.random.seed(RNG_SEED)
 
 
 def integerize(col):
@@ -44,41 +55,132 @@ def read_and_merge(deg_file, dta_file, merge_file):
     print("Reading input files...")
     deg_df = pd.read_csv(deg_file)
     dta_df = pd.read_stata(dta_file)
-    merge_df = pd.read_csv(merge_file)
+    tempus_merge = pd.read_csv(merge_file)
     print("Input files read successfully.")
 
+    merge_columns = ['patient_mrn', 'accession_id', 'sample_site']
     print("Merging dataframes...")
-    merge_has_mrn = merge_df[merge_df.mrn.notnull()]
-    unique_acc_mrns = (
-        merge_has_mrn.groupby(["accession_id", "mrn", "emrn"])
-        .emr_id.count()
-        .reset_index()
+    tempus_merge['sample_site'] = tempus_merge.sample_site.fillna('')
+    print(f'Merge file length: {len(tempus_merge)}')
+    tempus_merge_unique = tempus_merge.groupby(merge_columns).count().reset_index()
+    
+    print(f'Length after removing duplicates: {len(tempus_merge_unique)}')
+    tempus_deg_df = deg_df.merge(tempus_merge_unique[merge_columns], on='accession_id', how='inner')
+    print(f"Merged deg_df (len: {len(deg_df)}) to tempus_merge_unique (len: {len(tempus_merge_unique)}): result len {len(tempus_deg_df)}")
+    pdac_tempus_deg_df = tempus_deg_df[tempus_deg_df.sample_site.str.startswith('Pancreas')].copy()
+    print(f'Length after PDAC filter: {len(pdac_tempus_deg_df)}')
+    pdac_tempus_deg_df.drop('sample_site', axis=1, inplace=True)
+    #merge_has_mrn = merge_df[merge_df.mrn.notnull()]
+    #merge_has_mrn = merge_has_mrn[merge_has_mrn.report_type == "RNA"]
+    #unique_acc_mrns = (
+    #    merge_has_mrn.groupby(["accession_id", "mrn", "emrn", "specimen_sample_site"])
+    #    .emr_id.count()
+    #    .reset_index()
+    #)
+    #unique_acc_mrns.drop("emr_id", axis=1, inplace=True)
+    dta_merge_columns = ['mrn', 'pfsmofromdx', 'osmofromdx', 'recurrence_time_sur']
+    #deg_with_mrn = deg_df.merge(unique_acc_mrns, on="accession_id", how="right")
+    # deg_with_mrn = deg_with_mrn[deg_with_mrn.mrn.notnull()]
+    deg_with_pfs = pdac_tempus_deg_df.merge(
+        dta_df[dta_merge_columns], left_on="patient_mrn", right_on="mrn", how="inner"
     )
-
-    deg_with_mrn = deg_df.merge(unique_acc_mrns, on="accession_id", how="left")
-    deg_with_mrn = deg_with_mrn[deg_with_mrn.mrn.notnull()]
-    deg_with_pfs = deg_with_mrn.merge(
-        dta_df[["mrn", "recurrence_time_sur"]], on="mrn", how="left"
-    )
-    deg_with_pfs.drop(columns=["mrn", "emrn"], inplace=True)
+    print(f"Merged pdac_tempus_deg_df (len: {len(pdac_tempus_deg_df)}) to dta_df (len: {len(dta_df)}): result len {len(deg_with_pfs)}")
+    
+    deg_with_pfs.drop(columns=["patient_mrn", "mrn"], inplace=True)
+    deg_with_pfs_eml = deg_with_pfs[
+        deg_with_pfs.recurrence_time_sur.isin(["early", "mid", "late"])
+    ].copy()
+    print(f'Filtered to just early/mid/late. Len before {len(deg_with_pfs)}, len after {len(deg_with_pfs_eml)}')
+   
     print("Distribution of recurrence_time_sur after merges:")
-    print(deg_with_pfs.groupby("recurrence_time_sur").accession_id.count())
-    return deg_with_pfs
+    print(deg_with_pfs_eml.groupby(["recurrence_time_sur"]).accession_id.count())
+    results_dir = Path(f"results/{str(datetime.now()).replace(' ','_')}")
+    results_dir.mkdir(exist_ok=True)
+    deg_with_pfs_eml.to_csv(results_dir / "deg_with_pfs.csv", index=False)
+    metadata = {
+        'deg_file': deg_file, 
+        'dta_file': dta_file, 
+        'merge_file': merge_file
+    }
+    with open(results_dir / 'metadata.json', 'w') as fp: 
+        json.dump(metadata, fp)
+    return deg_with_pfs_eml, results_dir
 
 
-def run_deseq2(deg_with_pfs, out_file, a_label="early", b_label="late"):
+
+def kfold_run_deseq2(
+    deg_with_pfs, results_dir, holdout_fraction, a_label="early", b_label="late", n_splits=5
+):
+
+    
+    # train_ds, val_ds = random_split(dataset, [n_train, n_val])
+
+    # Assuming you have your features X and target y as numpy arrays or pandas DataFrames/Series
+    # X and y must have the same number of samples (e.g., n_samples = 200)
+    # Replace n_samples with the actual number of samples in your dataset
+
+    splits = {}
+    if holdout_fraction > 0:
+        X_train, X_holdout, y_train, y_holdout = train_test_split(deg_with_pfs, deg_with_pfs.recurrence_time_sur,
+                                                        stratify=deg_with_pfs.recurrence_time_sur, 
+                                                        test_size=holdout_fraction)
+        X_holdout.to_csv(results_dir / 'holdout.csv', index=False)
+        X_train.to_csv(results_dir / 'train.csv', index=False)
+        print(f'Holdout saved with len {len(X_holdout)}')
+        print(f'Train len {len(X_train)}')
+    else:
+        X_train = deg_with_pfs
+        y_train = deg_with_pfs.recurrence_time_sur
+
+    n_val_max = np.ceil(len(X_train) * (1 / n_splits))
+    n_val_min = np.floor(len(X_train) * (1 / n_splits))
+    print(n_val_min, n_val_max)
+    if (len(X_train) - n_val_max) % 2 == 0:
+        n_val = int(n_val_max)
+    else:
+        n_val = int(n_val_min)
+    print(len(X_train) - n_val, n_val)
+
+    n_train = len(X_train) - n_val
+    
+    ss = StratifiedShuffleSplit(n_splits=n_splits, test_size=n_val)
+
+    for i, (train_index, val_index) in enumerate(
+        ss.split(X_train, y_train)
+    ):
+        print(f"Fold {i+1}:")
+        print(f"  Train set size: {len(train_index)}")
+        print(f"  Validation set size: {len(val_index)}")
+        splits[i] = (train_index, val_index)
+
+        deg_with_pfs_train = deg_with_pfs.iloc[train_index]
+        run_deseq2(
+            deg_with_pfs_train,
+            results_dir,
+            f"deg_results_kfold_{i}",
+            a_label=a_label,
+            b_label=b_label,
+        )
+
+    with open(results_dir / f"fold_indices.pkl", "wb") as fp:
+        pickle.dump(splits, fp)
+
+
+def run_deseq2(deg_with_pfs, results_dir, outfile_name, a_label="early", b_label="late"):
     print(f"Running DESeq2 analysis on conditions: {a_label} vs {b_label}...")
     deg_with_pfs_ab = deg_with_pfs[
         deg_with_pfs.recurrence_time_sur.isin([a_label, b_label])
     ].copy()
-    deg_with_pfs_ab.set_index("accession_id", inplace=True)
 
-    metadata = deg_with_pfs_ab[["recurrence_time_sur", "emr_id"]].copy()
+    deg_with_pfs_ab.set_index("accession_id", inplace=True)
+    metadata = deg_with_pfs_ab[["recurrence_time_sur", "pfsmofromdx"]].copy()
+    
     a_condition = lambda row: condition(row, a_label)
     metadata["condition"] = metadata.apply(a_condition, axis=1)
-    metadata.drop(columns=["emr_id"], inplace=True)
+    metadata.drop(columns=["pfsmofromdx"], inplace=True)
 
-    deg_with_pfs_ab.drop(columns=["recurrence_time_sur", "emr_id"], inplace=True)
+
+    deg_with_pfs_ab.drop(columns=["recurrence_time_sur", "pfsmofromdx", "osmofromdx"], inplace=True)
     deg_with_pfs_ab_int = deg_with_pfs_ab.copy()
     print("Converting TPMs to integers for deseq...")
     for col in tqdm(deg_with_pfs_ab_int.columns):
@@ -89,6 +191,8 @@ def run_deseq2(deg_with_pfs, out_file, a_label="early", b_label="late"):
     print("Genes before filtering:", deg_with_pfs_ab_int.shape[1])
     deg_with_pfs_ab_int = deg_with_pfs_ab_int[genes_to_keep]
     print("Genes after filtering:", deg_with_pfs_ab_int.shape[1])
+    print(f"count shape: {deg_with_pfs_ab_int.shape}")
+    print(f'metadata shape: {metadata.shape}')
     inference = DefaultInference(n_cpus=8)
     dds = DeseqDataSet(
         counts=deg_with_pfs_ab_int,
@@ -130,18 +234,25 @@ def run_deseq2(deg_with_pfs, out_file, a_label="early", b_label="late"):
     )
     results_with_metadata.drop(columns=["logfold_sort"], inplace=True)
     results_with_metadata.fillna("", inplace=True)
-    out_file_today = f"{out_file}_{date.today()}.csv"
-    results_with_metadata.to_csv(out_file_today)
-    print(f"Results saved to {out_file_today}")
+    outfile = results_dir / f"{outfile_name}.csv"
+    results_with_metadata.to_csv(outfile)
+    print(f"Results saved to {outfile}")
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Usage: python deg.py <deg_file> <dta_file> <merge_file> <out_file>")
+        print(
+            "Usage: python deg.py <deg_file> <dta_file> <merge_file> <k_fold> <holdout_fraction>"
+        )
         sys.exit(1)
     deg_file = sys.argv[1]
     dta_file = sys.argv[2]
     merge_file = sys.argv[3]
-    out_file = sys.argv[4] if len(sys.argv) > 4 else "deg_results_with_metadata"
-    merged = read_and_merge(deg_file, dta_file, merge_file)
-    run_deseq2(merged, out_file)
+    use_kfold = sys.argv[4] if len(sys.argv) > 4 else "false"
+    holdout_fraction = float(sys.argv[5]) if len(sys.argv) > 5 else 0
+
+    merged, results_dir = read_and_merge(deg_file, dta_file, merge_file)
+    if use_kfold.lower() == "true":
+        kfold_run_deseq2(merged, results_dir, holdout_fraction)
+    else:
+        run_deseq2(merged, results_dir, "deg_results")

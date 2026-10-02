@@ -2,9 +2,43 @@ import pandas as pd
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import sys
+from pathlib import Path
+from datetime import datetime
+import json
 
 
-def main(prompt_in):
+def main(prompt_folder):
+
+    results_dir = Path(f"embeddings/{str(datetime.now()).replace(' ','_')}")
+    results_dir.mkdir(exist_ok=True)
+    for file_name in prompt_folder.iterdir():
+        if file_name.is_file():
+            if file_name.suffix == ".json":
+                print(file_name)
+                with open(file_name, "r") as fp:
+                    metadata = json.load(fp)
+                train_embeddings_filenames = []
+                holdout_embeddings_filenames = []
+                
+                for prompt_train_fname in metadata["prompt_train_fnames"]:
+                    print(f"Running c2s on {prompt_train_fname}")
+                    train_embeddings_filename = c2s(prompt_train_fname, results_dir)
+                    train_embeddings_filenames.append(str(train_embeddings_filename))
+
+                metadata["train_embedding_filenames"] = train_embeddings_filenames
+                
+                for prompt_holdout_fname in metadata["prompt_holdout_fnames"]:
+                    print(f"Running c2s on {prompt_holdout_fname}")
+                    holdout_embeddings_filename = c2s(prompt_holdout_fname, results_dir)
+                    holdout_embeddings_filenames.append(str(holdout_embeddings_filename))
+
+                metadata["holdout_embedding_filenames"] = holdout_embeddings_filenames
+
+                with open(results_dir / f"embedding_{file_name.stem}.json", "w") as fp:
+                    json.dump(metadata, fp)
+
+
+def c2s(prompt_in, results_dir):
     if torch.cuda.is_available():
         device = torch.device("cuda")
         print("CUDA is available. Using GPU.")
@@ -15,9 +49,16 @@ def main(prompt_in):
     tokenizer = AutoTokenizer.from_pretrained("vandijklab/C2S-Scale-Gemma-2-2B")
     model = AutoModelForCausalLM.from_pretrained("vandijklab/C2S-Scale-Gemma-2-2B")
     model.to(device)
-    prompt_in_filename = f"{prompt_in}.csv"
-    prompts = pd.read_csv(prompt_in_filename)
-    out_filename = prompt_in_filename.replace("prompts", "embeddings")
+    # prompt_in_filename = f"{prompt_in}.csv"
+    prompts = pd.read_csv(prompt_in)
+    in_fname = Path(prompt_in)
+    out_fname_stem = in_fname.stem
+    out_filename = results_dir / f"embeddings_{out_fname_stem}.csv"
+    # prompt_df_with_outcomes.to_csv(
+    #    out_fname,
+    #    index=False,
+    # )
+    # out_filename = prompt_in_filename.replace("prompts", "embeddings")
 
     all_embeddings = []
     all_acc_ids = []
@@ -50,11 +91,12 @@ def main(prompt_in):
         df_so_far.index.set_names(["accession_id", "layer_id"], inplace=True)
         df_so_far.to_csv(out_filename)
         print(f"saving df snapshot, len{len(df_so_far)}")
-    print(f"done: {out_filename.split('.csv')[0]}")
+    print(f"done: {out_filename}")
+    return out_filename
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python run_modeling.py <prompt_in>")
         sys.exit(1)
-    main(sys.argv[1])
+    main(Path(sys.argv[1]))
