@@ -13,6 +13,8 @@ def pipeline(user, out_dir):
     git_branch = "main"
     cpus_per_task = 12
     ram_gb_per_task = 30
+    # These are hard coded paths on my home directory in the RCC
+    # Future users should download these tar gzipped files and update this path
     star_index = "/home/msochor/rna-seq-data/ENCFF598IDH.tar.gz"
     rsem_index = "/home/msochor/rna-seq-data/ENCFF285DRD.tar.gz"
     slurm_template = Ffile("run.slurm.template")
