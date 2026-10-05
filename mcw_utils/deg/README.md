@@ -26,4 +26,15 @@ cleanup files in scratch please and thank you
 3. Download results to your computer, should be `deg_gene_expression_results_DATE.csv`
    
 # Local Stuff
-tbd
+
+Locally you will now run the differential expression analysis.
+
+## Basic mode
+This will run DeSeq locally
+
+Usage: python deg.py <deg_file> <dta_file> <merge_file>
+
+## End-to-end K-fold modeling
+This mode will split the patients into stratified K-folds and run DeSeq on each training set as well as do the accounting for end-to-end k-fold modeling downstream
+
+Usage: python deg.py <deg_file> <dta_file> <merge_file> <k_fold> <holdout_fraction>
