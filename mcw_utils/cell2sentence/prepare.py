@@ -42,7 +42,10 @@ def prepare(deg_file, top_n_sig, results_dir):
     adata_file = (
         "/mnt/c/Users/msochor/Downloads/dominguez_conde_immune_tissue_two_donors.h5ad"
     )
-    adata_df = anndata.read_h5ad(adata_file).var
+    if Path(adata_file).is_file():
+        adata_df = anndata.read_h5ad(adata_file).var
+    else:
+        adata_df = pd.DataFrame({'ensembl_id': [], 'gene_name': []})
     train_data = pd.read_csv(deg_file.parent / "train.csv")
     train_data_T = train_data.set_index("accession_id").T
 
